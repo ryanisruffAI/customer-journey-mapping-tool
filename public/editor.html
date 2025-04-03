@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journey Mapper - Editor</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Journey Mapper</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard.html">Dashboard</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 id="journeyTitle">Loading journey...</h1>
+            </div>
+            <div class="col-auto">
+                <button id="showOverviewBtn" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-eye"></i> Overview
+                </button>
+                <button id="showBrokenLinksBtn" class="btn btn-outline-warning">
+                    <i class="bi bi-exclamation-triangle"></i> <span id="brokenLinksCount">0</span> Broken Links
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Navigation sidebar -->
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        Navigation
+                    </div>
+                    <div class="card-body">
+                        <button id="backButton" class="btn btn-outline-secondary mb-3 w-100" disabled>
+                            <i class="bi bi-arrow-left"></i> Back
+                        </button>
+                        <div id="navigationHistory" class="list-group">
+                            <!-- Navigation history will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current step editor -->
+            <div class="col-md-9">
+                <div id="stepEditor" class="card step-card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="stepTitle" class="form-label">Step Title</label>
+                            <input type="text" class="form-control" id="stepTitle" placeholder="Enter step title">
+                        </div>
+                        <div class="mb-3">
+                            <label for="stepLocation" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="stepLocation" placeholder="Where is this interaction taking place?">
+                            <div class="form-text">Max 20 words</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="stepInfo" class="form-label">Information</label>
+                            <textarea class="form-control" id="stepInfo" rows="4" placeholder="What information is conveyed to the user?"></textarea>
+                            <div class="form-text">Max 100 words</div>
+                        </div>
+
+                        <div class="step-actions">
+                            <h5>Actions <button id="addActionBtn" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus"></i> Add Action</button></h5>
+                            <div id="actionsList">
+                                <!-- Actions will be populated here -->
+                                <div class="text-muted" id="noActionsMessage">No actions yet. Add an action to create a path from this step.</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-flex justify-content-between">
+                            <button id="saveStepBtn" class="btn btn-success">
+                                <i class="bi bi-save"></i> Save Changes
+                            </button>
+                            <button id="deleteStepBtn" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Delete Step
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Action Modal -->
+    <div class="modal fade" id="addActionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="actionForm">
+                        <div class="mb-3">
+                            <label for="actionText" class="form-label">Action Text</label>
+                            <input type="text" class="form-control" id="actionText" placeholder="e.g., Click Sign Up, Submit Form" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="targetType" class="form-label">This action leads to:</label>
+                            <select class="form-select" id="targetType">
+                                <option value="new">Create a new step</option>
+                                <option value="existing">Link to an existing step</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="existingStepContainer" style="display: none;">
+                            <label for="existingStepSelect" class="form-label">Select Existing Step</label>
+                            <select class="form-select" id="existingStepSelect">
+                                <!-- Existing steps will be populated here -->
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveActionBtn">Add Action</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Broken Links Modal -->
+    <div class="modal fade" id="brokenLinksModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Broken Links</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Broken links occur when you delete a step that other steps were linking to. Fix them by assigning a new target step.
+                    </div>
+                    <div id="brokenLinksList">
+                        <!-- Broken links will be listed here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Journey Overview Modal -->
+    <div class="modal fade" id="overviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Journey Overview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="journeyOverviewContainer" class="p-3">
+                        <!-- Journey overview will be rendered here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action template (for cloning) -->
+    <template id="actionTemplate">
+        <div class="action-item mb-2 p-2 border rounded">
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-sm btn-outline-primary action-btn" data-action-id="">
+                    <i class="bi bi-arrow-right-circle"></i> <span class="action-text"></span>
+                </button>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-danger delete-action-btn">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="broken-link-warning text-danger mt-1 d-none">
+                <small><i class="bi bi-exclamation-triangle"></i> Broken link</small>
+            </div>
+        </div>
+    </template>
+
+    <!-- Broken link item template -->
+    <template id="brokenLinkTemplate">
+        <div class="card mb-3 border-warning">
+            <div class="card-body">
+                <h6 class="card-title">Action "<span class="broken-action-text"></span>" from step "<span class="source-step-name"></span>"</h6>
+                <div class="row align-items-center">
+                    <div class="col">
+                        <select class="form-select target-step-select">
+                            <option value="" disabled selected>Select a step to link to</option>
+                            <!-- Available steps will be populated here -->
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-warning fix-link-btn">Fix Link</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="js/editor.js"></script>
+</body>
+</html>

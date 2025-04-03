@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS journeys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  name TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS steps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  journey_id INTEGER,
+  name TEXT DEFAULT 'Untitled Step',
+  location TEXT,
+  info TEXT,
+  FOREIGN KEY (journey_id) REFERENCES journeys(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS actions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  step_id INTEGER,
+  action_text TEXT,
+  target_step_id INTEGER,
+  broken INTEGER DEFAULT 0,
+  FOREIGN KEY (step_id) REFERENCES steps(id),
+  FOREIGN KEY (target_step_id) REFERENCES steps(id)
+);

@@ -1,0 +1,32 @@
+/* css/styles.css */
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+/* Sticky note style for steps */
+.step-card {
+    background-color: #fff8dc;
+    border: 1px solid #e6d492;
+    border-radius: 2px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+/* Styling for broken links */
+.broken-link {
+    color: #dc3545;
+    font-style: italic;
+}
+
+.action-btn {
+    margin-top: 5px;
+    margin-right: 5px;
+}
+
+.step-actions {
+    margin-top: 15px;
+    border-top: 1px dashed #ccc;
+    padding-top: 10px;
+}

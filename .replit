@@ -1,0 +1,24 @@
+modules = ["nodejs-20"]
+compile = "make"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+build = ["sh", "-c", "make"]
+
+[[ports]]
+localPort = 1337
+externalPort = 80
+
+[workflows]
+runButton = "Start App"
+
+[[workflows.workflow]]
+name = "Start App"
+mode = "sequential"
+author = 3089618
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node app.js"
