@@ -100,25 +100,68 @@ function ensureAuthenticated(req, res, next) {
           res.json({ message: '✅ Journey updated', changes: info.changes });
         });
 
-        
         // API Route to get a specific journey by ID
         app.get('/api/journeys/:journeyId', ensureAuthenticated, (req, res) => {
-            
-          // Retrieve the journey
-          const journey = db.prepare('SELECT * FROM journeys WHERE id = ?').get(journeyId);
+          try {
+            console.log('========= DEBUG INFO =========');
+            console.log('Request params:', req.params);
+            console.log('User:', req.user ? { id: req.user.id, username: req.user.username } : 'Not authenticated');
 
-          if (!journey) {
-            return res.status(404).json({ error: 'Journey not found' });
-          }
+            // Extract and parse the journey ID from the request parameters
+            const journeyId = parseInt(req.params.journeyId);
+            const userId = parseInt(req.user.id);
 
-          // For debugging - log the user ID and journey owner ID
-          console.log('User ID:', req.user.id, 'Journey owner ID:', journey.user_id);
+            console.log('Parsed IDs - journeyId:', journeyId, 'userId:', userId);
 
- if (parseInt(journey.user_id) !== parseInt(req.user.id)) {
-  return res.status(403).json({ error: 'Forbidden: You do not own this journey' });
+            // Retrieve the journey
+            const journey = db.prepare('SELECT * FROM journeys WHERE id = ?').get(journeyId);
+            console.log('Journey query result:', journey);
+
+            if (!journey) {
+              console.log('Journey not found');
+              return res.status(404).json({ error: 'Journey not found' });
             }
 
-          res.json(journey);
+            // For debugging - log the user ID and journey owner ID
+            console.log('User ID:', userId, 'Journey owner ID:', journey.user_id);
+
+            // Check ownership
+            if (parseInt(journey.user_id) !== userId) {
+              console.log('Forbidden: User does not own this journey');
+              return res.status(403).json({ error: 'Forbidden: You do not own this journey' });
+            }
+
+            // Get steps for this journey
+            const steps = db.prepare('SELECT * FROM steps WHERE journey_id = ? ORDER BY id').all(journeyId);
+            console.log(`Found ${steps.length} steps for journey ${journeyId}`);
+
+            // Get actions for each step
+            const stepsWithActions = steps.map(step => {
+              const actions = db.prepare('SELECT * FROM actions WHERE step_id = ?').all(step.id);
+              console.log(`Found ${actions.length} actions for step ${step.id}`);
+              return {
+                ...step,
+                actions
+              };
+            });
+
+            // Return the journey with steps and actions
+            const result = {
+              ...journey,
+              steps: stepsWithActions
+            };
+
+            console.log('Sending successful response with journey data');
+            res.json(result);
+          } catch (error) {
+            console.error('========= ERROR =========');
+            console.error('Error in /api/journeys/:journeyId endpoint:', error);
+            console.error('Stack trace:', error.stack);
+            res.status(500).json({ 
+              error: 'Server error', 
+              message: error.message 
+            });
+          }
         });
         // ✅ Secure DELETE a journey by ID
         app.delete('/api/journeys/:journeyId', ensureAuthenticated, (req, res) => {
