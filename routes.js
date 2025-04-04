@@ -265,34 +265,63 @@ function ensureAuthenticated(req, res, next) {
             actions
           });
         });
-// ✅ Update a specific step in a journey
-app.put('/api/steps/:stepId', ensureAuthenticated, (req, res) => {
-    const { stepId } = req.params;
-    const { name, location, info } = req.body;
+        app.put('/api/steps/:stepId', ensureAuthenticated, (req, res) => {
+          try {
+            const stepId = parseInt(req.params.stepId);
+            console.log('Updating step:', stepId, 'with data:', req.body);
 
-    if (!name || !location || !info) {
-      return res.status(400).json({ error: 'All fields are required' });
+            // Extract data using the CORRECT field names from your schema
+            const { name, location, info } = req.body;
+
+            if (!name || !location || !info) {
+              console.log('Missing required fields for step update');
+              return res.status(400).json({ error: 'All fields (name, location, info) are required' });
+            }
+
+            // Retrieve the step record
+            const step = db.prepare('SELECT * FROM steps WHERE id = ?').get(stepId);
+            if (!step) {
+              console.log('Step not found:', stepId);
+              return res.status(404).json({ error: 'Step not found' });
+            }
+
+            // Retrieve the journey that the step belongs to
+            const journey = db.prepare('SELECT * FROM journeys WHERE id = ?').get(step.journey_id);
+            if (!journey) {
+              console.log('Journey not found for step:', stepId);
+              return res.status(404).json({ error: 'Journey not found' });
+            }
+
+            // Check if the authenticated user owns the journey
+            console.log('Checking ownership - User:', req.user.id, 'Journey owner:', journey.user_id);
+            if (parseInt(journey.user_id) !== parseInt(req.user.id)) {
+              console.log('Ownership verification failed');
+              return res.status(403).json({ error: 'Forbidden: You do not own this journey' });
+            }
+
+            console.log('Updating step in database...');
+            const stmt = db.prepare('UPDATE steps SET name = ?, location = ?, info = ? WHERE id = ?');
+            const result = stmt.run(name, location, info, stepId);
+
+            console.log('Step update result:', result);
+
+            // Get the updated step with its actions
+            const updatedStep = db.prepare('SELECT * FROM steps WHERE id = ?').get(stepId);
+            const actions = db.prepare('SELECT * FROM actions WHERE step_id = ?').all(stepId);
+
+            // Combine the step with its actions
+            const response = {
+              ...updatedStep,
+              actions
+            };
+
+            console.log('Step updated successfully');
+            res.json(response);
+
+          } catch (error) {
+            console.error('Error updating step:', error);
+            res.status(500).json({ error: 'Failed to update step', details: error.message });
           }
-    // Retrieve the step record using the stepId from the URL
-    const step = db.prepare('SELECT * FROM steps WHERE id = ?').get(stepId);
-    if (!step) {
-      return res.status(404).json({ error: 'Step not found' });
-    }
-    
-    // Retrieve the journey that the step belongs to
-    const journey = db.prepare('SELECT * FROM journeys WHERE id = ?').get(step.journey_id);
-    if (!journey) {
-      return res.status(404).json({ error: 'Journey not found' });
-    }
-    // Check if the authenticated user owns the journey
-    if (parseInt(journey.user_id) !== parseInt(req.user.id)) {
-      return res.status(403).json({ error: 'Forbidden: You do not own this journey' });
-    }
-
-          const stmt = db.prepare('UPDATE steps SET name = ?, location = ?, info = ? WHERE id = ?');
-          const result = stmt.run(name, location, info, stepId);
-
-          res.json({ message: '✅ Step updated', changes: result.changes });
         });
         // ✅ Delete a step by ID
         // ✅ Secure Delete a step by ID

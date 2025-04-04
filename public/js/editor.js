@@ -347,20 +347,35 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Failed to fix broken link.');
         });
     }
-
     // Save changes to the current step
     function saveCurrentStep() {
-        if (!currentStep) return;
+        if (!currentStep) {
+            console.error('No current step to save');
+            return;
+        }
 
         const updatedTitle = stepTitle.value.trim();
         const updatedLocation = stepLocation.value.trim();
         const updatedInfo = stepInfo.value.trim();
 
+        console.log('Saving step:', currentStep.id);
+        console.log('Updated values:', {
+            name: updatedTitle,
+            location: updatedLocation,
+            info: updatedInfo
+        });
+
         // Validate
         if (!updatedTitle || !updatedLocation || !updatedInfo) {
+            console.warn('Validation failed: All fields are required');
             alert('All fields are required');
             return;
         }
+
+        // Add a loading indicator
+        const originalBtnText = saveStepBtn.textContent;
+        saveStepBtn.disabled = true;
+        saveStepBtn.textContent = 'Saving...';
 
         // Save changes
         fetch(`/api/steps/${currentStep.id}`, {
@@ -377,30 +392,51 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to save step');
+                console.error('Server returned error status:', response.status);
+                return response.json().then(err => {
+                    throw new Error(`Failed to save step: ${err.error || response.statusText}`);
+                });
             }
             return response.json();
         })
-        .then(data => {
-            // Update current step
-            currentStep.name = updatedTitle;
-            currentStep.location = updatedLocation;
-            currentStep.info = updatedInfo;
+        .then(updatedStep => {
+            console.log('Step saved successfully:', updatedStep);
 
+            // Update current step with ALL fields from the response
+            currentStep = updatedStep;
+
+            // If the server didn't return actions, preserve the existing ones
+            if (!currentStep.actions && currentStep.id) {
+                // Reload actions to ensure they're up to date
+                return loadActions(currentStep.id).then(actions => {
+                    currentStep.actions = actions;
+                    return currentStep;
+                });
+            }
+
+            return currentStep;
+        })
+        .then(step => {
             // Update in allSteps
-            const stepIndex = allSteps.findIndex(s => s.id === currentStep.id);
+            const stepIndex = allSteps.findIndex(s => s.id === step.id);
             if (stepIndex !== -1) {
-                allSteps[stepIndex] = currentStep;
+                allSteps[stepIndex] = step;
             }
 
             // Update navigation history display
-            updateNavigationHistory(currentStep, true);
+            updateNavigationHistory(step, true);
 
+            // Show success message
             alert('Step saved successfully');
         })
         .catch(error => {
             console.error('Error saving step:', error);
-            alert('Failed to save step.');
+            alert(`Failed to save step: ${error.message || 'Unknown error'}`);
+        })
+        .finally(() => {
+            // Restore button state
+            saveStepBtn.disabled = false;
+            saveStepBtn.textContent = originalBtnText;
         });
     }
 
