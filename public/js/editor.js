@@ -1,4 +1,13 @@
 // js/editor.js
+// debounce function 
+function debounce(func, timeout = 1000) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { func.apply(this, args); }, timeout);
+  };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Get journey ID from URL parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -51,6 +60,86 @@ document.addEventListener('DOMContentLoaded', function() {
     let allSteps = [];
     let navigationSteps = [];
     let brokenLinks = [];
+    let autoSaveError = false;
+
+    // Add auto-save functionality
+    function setupAutoSave() {
+      // Select all input and textarea elements in the step form
+      const formFields = document.querySelectorAll('#stepTitle, #stepLocation, #stepInfo');
+
+        // Create a debounced version of the save function
+        const debouncedSave = debounce(() => {
+          // Add a small visual indicator that save is happening
+          const saveStatus = document.createElement('span');
+          saveStatus.id = 'autoSaveIndicator';
+          saveStatus.className = 'text-info small ms-2';
+          saveStatus.textContent = 'Saving...';
+
+          // Add the indicator near the save button if it doesn't exist yet
+          if (!document.getElementById('autoSaveIndicator')) {
+            saveStepBtn.parentNode.insertBefore(saveStatus, saveStepBtn.nextSibling);
+          } else {
+            document.getElementById('autoSaveIndicator').textContent = 'Saving...';
+            document.getElementById('autoSaveIndicator').className = 'text-info small ms-2';
+            document.getElementById('autoSaveIndicator').style.display = 'inline';
+          }
+
+          // Reset auto-save error flag
+          autoSaveError = false;
+
+          // Create a promise wrapper around saveCurrentStep
+          new Promise((resolve, reject) => {
+            try {
+              // Call the existing save function
+              saveCurrentStep(true);
+
+              // Check for success based on the alert message
+              // This is a bit of a hack, but works with your current implementation
+              setTimeout(() => {
+                resolve();
+              }, 1000);
+            } catch (error) {
+              reject(error);
+            }
+          })
+          .then(() => {
+            // Update the indicator after successful save
+            const indicator = document.getElementById('autoSaveIndicator');
+            if (indicator) {
+              indicator.textContent = 'Changes saved';
+              indicator.className = 'text-success small ms-2';
+              // Fade out after 2 seconds
+              setTimeout(() => {
+                indicator.style.display = 'none';
+              }, 2000);
+            }
+          })
+          .catch(error => {
+            console.error('Auto-save failed:', error);
+            autoSaveError = true;
+
+            // Update the indicator to show failure
+            const indicator = document.getElementById('autoSaveIndicator');
+            if (indicator) {
+              indicator.textContent = 'Auto-save failed!';
+              indicator.className = 'text-danger small ms-2';
+            }
+          });
+        });
+      // Add blur event listener to all form fields
+      formFields.forEach(field => {
+        field.addEventListener('blur', function() {
+          // Only trigger save if the value has changed
+          if (this.dataset.previousValue !== this.value) {
+            this.dataset.previousValue = this.value;
+            debouncedSave();
+          }
+        });
+
+        // Store initial value
+        field.dataset.previousValue = field.value;
+      });
+    }
 
     // Initialize the editor
     function init() {
@@ -96,8 +185,11 @@ document.addEventListener('DOMContentLoaded', function() {
             renderJourneyOverview();
             overviewModal.show();
         });
+        // Set up auto-save functionality
+        setupAutoSave();
     }
 
+    
     // Load journey data
     function loadJourney(journeyId) {
         fetch(`/api/journeys/${journeyId}`, {
@@ -347,8 +439,8 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Failed to fix broken link.');
         });
     }
-    // Save changes to the current step
-    function saveCurrentStep() {
+        // Save changes to the current step
+        function saveCurrentStep(isAutoSave = false) {
         if (!currentStep) {
             console.error('No current step to save');
             return;
@@ -452,8 +544,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update navigation history display
                 updateNavigationHistory(step, true);
 
-                // Show success message
-                alert('Step saved successfully');
+                // Only show success message for manual saves (not auto-saves)
+                if (!isAutoSave) {
+                    alert('Step saved successfully');
+                }
             })
             .catch(error => {
                 console.error('Error saving step:', error);
@@ -661,9 +755,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle navigation between steps
     function navigateToStep(stepId) {
-        // Save current step first if it has been modified
-        if (isStepModified()) {
-            if (confirm('You have unsaved changes. Save before navigating?')) {
+        // Only ask for confirmation if auto-save failed
+        if (autoSaveError && isStepModified()) {
+            if (confirm('Auto-save failed. Save changes manually before navigating?')) {
                 saveCurrentStep();
             }
         }
@@ -675,9 +769,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function navigateBack() {
         if (navigationSteps.length < 2) return;
 
-        // Save current step first if it has been modified
-        if (isStepModified()) {
-            if (confirm('You have unsaved changes. Save before navigating?')) {
+        // Only ask for confirmation if auto-save failed
+        if (autoSaveError && isStepModified()) {
+            if (confirm('Auto-save failed. Save changes manually before navigating?')) {
                 saveCurrentStep();
             }
         }
@@ -744,18 +838,24 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`Adding step to history: ${step.id} - ${step.name}`);
 
             if (!isActive) {
-                stepItem.addEventListener('click', () => {
-                    // Get the index in the full navigation history
-                    const fullIndex = navigationSteps.findIndex(s => s.id === step.id);
+            stepItem.addEventListener('click', () => {
+                // Only ask for confirmation if auto-save failed
+                if (autoSaveError && isStepModified()) {
+                    if (confirm('Auto-save failed. Save changes manually before navigating?')) {
+                        saveCurrentStep();
+                    }
+                }
 
-                    // Truncate the history to this point
-                    navigationSteps = navigationSteps.slice(0, fullIndex + 1);
+                // Get the index in the full navigation history
+                const fullIndex = navigationSteps.findIndex(s => s.id === step.id);
 
-                    // Load the step
-                    loadStep(step.id);
-                });
-            }
+                // Truncate the history to this point
+                navigationSteps = navigationSteps.slice(0, fullIndex + 1);
 
+                // Load the step
+                loadStep(step.id);
+            });
+        }
             navigationHistory.appendChild(stepItem);
         });
     }
@@ -784,7 +884,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Add click handler to navigate to the target step
             if (action.target_step_id) {
-                actionBtn.addEventListener('click', () => navigateToStep(action.target_step_id));
+                actionBtn.addEventListener('click', () => {
+                    // Only ask for confirmation if auto-save failed
+                    if (autoSaveError && isStepModified()) {
+                        if (confirm('Auto-save failed. Save changes manually before navigating?')) {
+                            saveCurrentStep();
+                        }
+                    }
+
+                    navigateToStep(action.target_step_id);
+                });
             }
 
             // Show broken link warning if needed
@@ -799,6 +908,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Change click behavior to fix link
                 actionBtn.addEventListener('click', () => {
+                    // Only ask for confirmation if auto-save failed
+                    if (autoSaveError && isStepModified()) {
+                        if (confirm('Auto-save failed. Save changes manually before navigating?')) {
+                            saveCurrentStep();
+                        }
+                    }
+
                     loadBrokenLinks().then(() => {
                         brokenLinksModal.show();
                     });
@@ -913,6 +1029,13 @@ document.addEventListener('DOMContentLoaded', function() {
             viewBtn.className = 'btn btn-sm btn-primary';
             viewBtn.textContent = 'View';
             viewBtn.addEventListener('click', () => {
+                // Only ask for confirmation if auto-save failed
+                if (autoSaveError && isStepModified()) {
+                    if (confirm('Auto-save failed. Save changes manually before navigating?')) {
+                        saveCurrentStep();
+                    }
+                }
+
                 overviewModal.hide();
                 navigateToStep(step.id);
             });
@@ -933,6 +1056,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Add click handler after appending
             overviewDiv.querySelector('#fixBrokenLinksBtn').addEventListener('click', () => {
+                // Only ask for confirmation if auto-save failed
+                if (autoSaveError && isStepModified()) {
+                    if (confirm('Auto-save failed. Save changes manually before navigating?')) {
+                        saveCurrentStep();
+                    }
+                }
+
                 overviewModal.hide();
                 loadBrokenLinks().then(() => {
                     brokenLinksModal.show();
