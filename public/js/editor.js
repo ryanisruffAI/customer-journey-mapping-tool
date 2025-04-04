@@ -364,6 +364,11 @@ document.addEventListener('DOMContentLoaded', function() {
             location: updatedLocation,
             info: updatedInfo
         });
+        console.log('Payload being sent to server:', JSON.stringify({
+            name: updatedTitle,
+            location: updatedLocation,
+            info: updatedInfo
+        }));
 
         // Validate
         if (!updatedTitle || !updatedLocation || !updatedInfo) {
@@ -390,15 +395,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 info: updatedInfo
             })
         })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Server returned error status:', response.status);
-                return response.json().then(err => {
-                    throw new Error(`Failed to save step: ${err.error || response.statusText}`);
+            .then(response => {
+                console.log('Server response status:', response.status);
+
+                if (!response.ok) {
+                    console.error('Server returned error status:', response.status);
+                    return response.json().then(err => {
+                        console.error('Error response body:', err);
+                        throw new Error(`Failed to save step: ${err.error || response.statusText}`);
+                    }).catch(jsonError => {
+                        // If response.json() fails
+                        console.error('Could not parse error response as JSON:', jsonError);
+                        throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                    });
+                }
+
+                return response.json().catch(jsonError => {
+                    console.error('Could not parse success response as JSON:', jsonError);
+                    throw new Error('Failed to parse server response');
                 });
-            }
-            return response.json();
-        })
+            })
         .then(updatedStep => {
             console.log('Step saved successfully:', updatedStep);
 
@@ -416,23 +432,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
             return currentStep;
         })
-        .then(step => {
-            // Update in allSteps
-            const stepIndex = allSteps.findIndex(s => s.id === step.id);
-            if (stepIndex !== -1) {
-                allSteps[stepIndex] = step;
-            }
+            .then(step => {
+                console.log('Step saved successfully:', step);
 
-            // Update navigation history display
-            updateNavigationHistory(step, true);
+                // Update the step in the allSteps array
+                const stepIndex = allSteps.findIndex(s => s.id === step.id);
+                if (stepIndex !== -1) {
+                    allSteps[stepIndex] = step;
+                }
 
-            // Show success message
-            alert('Step saved successfully');
-        })
-        .catch(error => {
-            console.error('Error saving step:', error);
-            alert(`Failed to save step: ${error.message || 'Unknown error'}`);
-        })
+                // Update the current step with the latest data
+                currentStep = step;
+
+                // Make sure form fields reflect the latest data
+                stepTitle.value = step.name;
+                stepLocation.value = step.location;
+                stepInfo.value = step.info;
+
+                // Update navigation history display
+                updateNavigationHistory(step, true);
+
+                // Show success message
+                alert('Step saved successfully');
+            })
+            .catch(error => {
+                console.error('Error saving step:', error);
+                console.error('Error details:', error.stack || error);
+
+                // Try to get more info if it's a response error
+                if (error.response) {
+                    error.response.json().then(data => {
+                        console.error('Server error response:', data);
+                        alert(`Failed to save step: ${data.error || error.message || 'Unknown error'}`);
+                    }).catch(e => {
+                        alert(`Failed to save step: ${error.message || 'Unknown error'}`);
+                    });
+                } else {
+                    alert(`Failed to save step: ${error.message || 'Unknown error'}`);
+                }
+            })
         .finally(() => {
             // Restore button state
             saveStepBtn.disabled = false;
@@ -667,14 +705,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateNavigationHistory(step, updateOnly = false) {
         if (!updateOnly) {
             // Check if this step is already the last one in the history
-            if (navigationSteps.length > 0 && 
-                navigationSteps[navigationSteps.length - 1].id === step.id) {
+            if (navigationSteps.length > 0 && navigationSteps[navigationSteps.length - 1].id === step.id) {
                 // It's already the current step, no need to add it again
                 return;
             }
-
             // Add to navigation steps
             navigationSteps.push(step);
+        } else {
+            // When updateOnly is true, update the last navigation step with the new step data
+            if (navigationSteps.length > 0) {
+                navigationSteps[navigationSteps.length - 1] = step;
+            }
         }
 
         // Update the back button state
@@ -686,10 +727,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Render the navigation history
     function renderNavigationHistory() {
+        console.log('Rendering navigation history with steps:', navigationSteps);
         navigationHistory.innerHTML = '';
 
         // Show up to the last 5 steps
         const recentSteps = navigationSteps.slice(-5);
+        console.log('Recent steps for display:', recentSteps);
 
         // Create elements for each step
         recentSteps.forEach((step, index) => {
@@ -698,6 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const stepItem = document.createElement('button');
             stepItem.className = `list-group-item list-group-item-action ${isActive ? 'active' : ''}`;
             stepItem.textContent = step.name;
+            console.log(`Adding step to history: ${step.id} - ${step.name}`);
 
             if (!isActive) {
                 stepItem.addEventListener('click', () => {
