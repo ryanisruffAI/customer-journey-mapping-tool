@@ -800,9 +800,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!updateOnly) {
             // Check if this step is already the last one in the history
             if (navigationSteps.length > 0 && navigationSteps[navigationSteps.length - 1].id === step.id) {
-                // It's already the current step, no need to add it again
+                // It's already the current step, just update the UI to reflect the current active state
+                renderNavigationHistory();
                 return;
             }
+
+            // Check if the step is already in navigation history
+            const existingIndex = navigationSteps.findIndex(s => s.id === step.id);
+
+            if (existingIndex !== -1) {
+                // If step exists somewhere in the history, truncate the history up to that point
+                navigationSteps = navigationSteps.slice(0, existingIndex);
+            }
+
             // Add to navigation steps
             navigationSteps.push(step);
         } else {
@@ -824,20 +834,22 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Rendering navigation history with steps:', navigationSteps);
         navigationHistory.innerHTML = '';
 
-        // Show up to the last 5 steps
-        const recentSteps = navigationSteps.slice(-5);
-        console.log('Recent steps for display:', recentSteps);
+        // Show ALL steps in the navigation history instead of just the last 5
+        // This ensures steps don't disappear when navigating forward
+        const allSteps = [...navigationSteps];
+        console.log('Steps for display:', allSteps);
 
         // Create elements for each step
-        recentSteps.forEach((step, index) => {
-            const isActive = index === recentSteps.length - 1;
+        allSteps.forEach((step, index) => {
+            const isActive = index === navigationSteps.length - 1;
 
             const stepItem = document.createElement('button');
             stepItem.className = `list-group-item list-group-item-action ${isActive ? 'active' : ''}`;
             stepItem.textContent = step.name;
-            console.log(`Adding step to history: ${step.id} - ${step.name}`);
+            stepItem.setAttribute('data-step-id', step.id); // Add data attribute for easy identification
+            console.log(`Adding step to history: ${step.id} - ${step.name} - Active: ${isActive}`);
 
-            if (!isActive) {
+            // Always attach click handlers, even to the active step
             stepItem.addEventListener('click', () => {
                 // Only ask for confirmation if auto-save failed
                 if (autoSaveError && isStepModified()) {
@@ -849,13 +861,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Get the index in the full navigation history
                 const fullIndex = navigationSteps.findIndex(s => s.id === step.id);
 
+                // If we're clicking the same step we're already on, do nothing
+                if (fullIndex === navigationSteps.length - 1) {
+                    return;
+                }
+
                 // Truncate the history to this point
                 navigationSteps = navigationSteps.slice(0, fullIndex + 1);
 
                 // Load the step
                 loadStep(step.id);
             });
-        }
+
             navigationHistory.appendChild(stepItem);
         });
     }
