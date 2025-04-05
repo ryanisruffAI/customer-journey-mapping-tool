@@ -90,6 +90,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Delete a journey
     function deleteJourney(journeyId) {
+        // Find the delete button and disable it during the request
+        const deleteBtn = journeyList.querySelector(`[data-journey-id="${journeyId}"] .delete-journey-btn`);
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting...';
+        }
+
         fetch(`/api/journeys/${journeyId}`, {
             method: 'DELETE',
             headers: {
@@ -98,7 +105,15 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to delete journey');
+                // Try to get more detailed error information from the response
+                return response.json()
+                    .then(errorData => {
+                        throw new Error(errorData.error || `Server returned ${response.status}: ${response.statusText}`);
+                    })
+                    .catch(jsonError => {
+                        // If parsing JSON fails, throw with status code
+                        throw new Error(`Failed to delete journey (${response.status})`);
+                    });
             }
             return response.json();
         })
@@ -116,7 +131,14 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error deleting journey:', error);
-            alert('Failed to delete journey. Please try again.');
+            alert(`Failed to delete journey: ${error.message}`);
+        })
+        .finally(() => {
+            // Re-enable the button if it exists
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = 'Delete';
+            }
         });
     }
 

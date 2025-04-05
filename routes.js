@@ -163,10 +163,11 @@ function ensureAuthenticated(req, res, next) {
             });
           }
         });
-        // ✅ Secure DELETE a journey by ID
-        app.delete('/api/journeys/:journeyId', ensureAuthenticated, (req, res) => {
-          const { journeyId } = req.params;
+      // ✅ Secure DELETE a journey by ID
+      app.delete('/api/journeys/:journeyId', ensureAuthenticated, (req, res) => {
+        const { journeyId } = req.params;
 
+        try {
           // Retrieve the journey to verify ownership
           const journey = db.prepare('SELECT * FROM journeys WHERE id = ?').get(journeyId);
           if (!journey) {
@@ -176,12 +177,47 @@ function ensureAuthenticated(req, res, next) {
             return res.status(403).json({ error: 'Forbidden: You do not own this journey' });
           }
 
-          // If ownership is confirmed, delete the journey
+          // Begin a transaction
+          db.prepare('BEGIN TRANSACTION').run();
+
+          // First, get all steps in the journey
+          const steps = db.prepare('SELECT id FROM steps WHERE journey_id = ?').all(journeyId);
+          const stepIds = steps.map(step => step.id);
+
+          // For each step, delete its actions
+          if (stepIds.length > 0) {
+            // Delete actions that point to these steps as targets
+            db.prepare(`UPDATE actions SET target_step_id = NULL, broken = 1 
+                       WHERE target_step_id IN (${stepIds.map(() => '?').join(',')})`).run(...stepIds);
+
+            // Delete actions that belong to these steps
+            db.prepare(`DELETE FROM actions 
+                       WHERE step_id IN (${stepIds.map(() => '?').join(',')})`).run(...stepIds);
+          }
+
+          // Now delete all steps
+          db.prepare('DELETE FROM steps WHERE journey_id = ?').run(journeyId);
+
+          // Finally delete the journey
           const stmt = db.prepare('DELETE FROM journeys WHERE id = ?');
           const info = stmt.run(journeyId);
 
+          // Commit the transaction
+          db.prepare('COMMIT').run();
+
           res.json({ message: '✅ Journey deleted', changes: info.changes });
-        });
+        } catch (error) {
+          // Rollback on error
+          try {
+            db.prepare('ROLLBACK').run();
+          } catch (rollbackError) {
+            console.error('Rollback failed:', rollbackError);
+          }
+
+          console.error('Error deleting journey:', error);
+          res.status(500).json({ error: `Failed to delete journey: ${error.message}` });
+        }
+      });
         // ✅ Secure API Route to add a step to a journey
         app.post('/api/journeys/:journeyId/steps', ensureAuthenticated, (req, res) => {
             const { journeyId } = req.params;
