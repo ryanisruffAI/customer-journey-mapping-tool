@@ -13,7 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const newJourneyModal = new bootstrap.Modal(document.getElementById('newJourneyModal'));
 
     // Load user's journeys
+    // Load user's journeys
     function loadJourneys() {
+        console.log('Loading journeys...');
         loadingIndicator.classList.remove('d-none');
         noJourneysMessage.classList.add('d-none');
 
@@ -21,9 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const existingCards = journeyList.querySelectorAll('.col-md-4');
         existingCards.forEach(card => card.remove());
 
-        fetch('/api/journeys', {
+        // Add a cache-busting parameter to prevent browser caching
+        const cacheBuster = `?_=${new Date().getTime()}`;
+
+        fetch(`/api/journeys${cacheBuster}`, {
             headers: {
-                'x-api-key': 'MY_SECRET_TOKEN'
+                'x-api-key': 'MY_SECRET_TOKEN',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             }
         })
         .then(response => {
@@ -33,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(journeys => {
+            console.log(`Loaded ${journeys.length} journeys`);
             loadingIndicator.classList.add('d-none');
 
             if (journeys.length === 0) {
@@ -42,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Create a card for each journey
             journeys.forEach(journey => {
+                console.log(`Creating card for journey: ${journey.id} - ${journey.name}`);
                 const card = createJourneyCard(journey);
                 journeyList.appendChild(card);
             });
@@ -63,8 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const template = journeyCardTemplate.content.cloneNode(true);
         const card = template.querySelector('.col-md-4');
 
-        // Set journey details
+        // Set journey details with a unique ID attribute
         card.setAttribute('data-journey-id', journey.id);
+        card.setAttribute('id', `journey-card-${journey.id}`); // Add a unique ID attribute
+        console.log(`Creating card with ID: journey-card-${journey.id}`);
+
         card.querySelector('.journey-name').textContent = journey.name;
 
         // Format date
@@ -84,7 +97,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show confirmation before deleting a journey
     function confirmDeleteJourney(journeyId, journeyName) {
         if (confirm(`Are you sure you want to delete the journey "${journeyName}"?`)) {
+            console.log(`User confirmed deletion of journey ${journeyId}: "${journeyName}"`);
             deleteJourney(journeyId);
+        } else {
+            console.log(`User cancelled deletion of journey ${journeyId}: "${journeyName}"`);
         }
     }
 
@@ -97,6 +113,8 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteBtn.textContent = 'Deleting...';
         }
 
+        console.log(`Attempting to delete journey ${journeyId}`);
+
         fetch(`/api/journeys/${journeyId}`, {
             method: 'DELETE',
             headers: {
@@ -104,30 +122,56 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(response => {
+            console.log(`Delete response status: ${response.status}`);
+
             if (!response.ok) {
                 // Try to get more detailed error information from the response
-                return response.json()
-                    .then(errorData => {
+                return response.text().then(text => {
+                    console.log(`Error response body: ${text}`);
+
+                    try {
+                        const errorData = JSON.parse(text);
                         throw new Error(errorData.error || `Server returned ${response.status}: ${response.statusText}`);
-                    })
-                    .catch(jsonError => {
-                        // If parsing JSON fails, throw with status code
-                        throw new Error(`Failed to delete journey (${response.status})`);
-                    });
+                    } catch (jsonError) {
+                        // If parsing JSON fails, throw with status code and text
+                        throw new Error(`Failed to delete journey (${response.status}): ${text || response.statusText}`);
+                    }
+                });
             }
+
             return response.json();
         })
         .then(data => {
-            // Remove the journey card from the UI
-            const card = journeyList.querySelector(`[data-journey-id="${journeyId}"]`);
+            console.log(`Delete success:`, data);
+
+            // Remove the journey card from the UI using the unique ID
+            const card = document.getElementById(`journey-card-${journeyId}`);
             if (card) {
+                console.log(`Removing journey card from UI with ID: journey-card-${journeyId}`);
                 card.remove();
+            } else {
+                // Try alternative selector as fallback
+                const altCard = journeyList.querySelector(`[data-journey-id="${journeyId}"]`);
+                if (altCard) {
+                    console.log(`Removing journey card using data attribute selector`);
+                    altCard.remove();
+                } else {
+                    console.warn(`Could not find journey card in the UI for journey ${journeyId}`);
+                }
             }
 
             // Show no journeys message if no journeys left
             if (journeyList.querySelectorAll('.col-md-4').length === 0) {
+                console.log(`No journeys left, showing message`);
                 noJourneysMessage.classList.remove('d-none');
             }
+
+            // Force reload of journeys to ensure sync with server
+            // This is important - it will re-fetch the current state from the server
+            setTimeout(() => {
+                console.log('Reloading journeys to verify deletion');
+                loadJourneys();
+            }, 500);
         })
         .catch(error => {
             console.error('Error deleting journey:', error);
@@ -141,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
     // Create a new journey
     function createJourney() {
         const name = journeyNameInput.value.trim();
