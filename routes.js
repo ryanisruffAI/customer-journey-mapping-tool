@@ -1,4 +1,6 @@
     const User = require('./models/user');
+    const path = require('path');
+    const openaiService = require('./openai-service');
     var passport = require('passport');
     const db = require('./models/JourneyDB');  // ✅ Moved to the top for clarity
 // Middleware to ensure the user is authenticated
@@ -9,7 +11,25 @@ function ensureAuthenticated(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
-    module.exports = function (app) {
+// Authentication check route
+const checkAuth = function(req, res) {
+  if (req.isAuthenticated()) {
+    // Return authenticated status and basic user info
+    return res.json({ 
+      authenticated: true, 
+      user: { 
+        id: req.user.id, 
+        username: req.user.username 
+      } 
+    });
+  }
+  // User is not authenticated
+  return res.json({ authenticated: false });
+};
+
+      module.exports = function (app) {
+        // Add this line as the first route inside the module.exports function
+        app.get('/api/check-auth', checkAuth);
 
       // Home route
       app.get('/', function (req, res) {
@@ -66,7 +86,124 @@ function ensureAuthenticated(req, res, next) {
       app.get('/ping', function(req, res) {
           res.send("pong!", 200);
       });
+      // GET route to serve the problems page
+      app.get('/problems', ensureAuthenticated, (req, res) => {
+          res.redirect('/problems.html');
+      });
 
+      // GET route to serve the validation page
+      app.get('/validation', ensureAuthenticated, (req, res) => {
+          res.redirect('/validation.html');
+      });
+
+      // GET route to serve the journeys page (formerly dashboard)
+      app.get('/dashboard', ensureAuthenticated, (req, res) => {
+          res.redirect('/dashboard.html');
+      });
+
+      // Optional: Add an alias for clarity
+      app.get('/journeys', ensureAuthenticated, (req, res) => {
+          res.redirect('/dashboard.html');
+      });
+
+      // GET route to fetch all problems for the logged-in user
+      app.get('/api/problems', ensureAuthenticated, async (req, res) => {
+          try {
+              const problems = await db.all(
+                  'SELECT * FROM problems WHERE user_id = ? ORDER BY created_at DESC',
+                  [req.user.id]
+              );
+              res.json(problems);
+          } catch (err) {
+              console.error('Error fetching problems:', err);
+              res.status(500).json({ error: 'Failed to fetch problems' });
+          }
+      });
+
+        // POST route to create a new problem
+        app.post('/api/problems', ensureAuthenticated, async (req, res) => {
+            console.log('POST /api/problems - Authenticated user:', req.user); // Debug log
+            try {
+                const { domain, problem_description, interest_level, reason } = req.body;
+                // Validate required fields
+                if (!domain || !problem_description || !interest_level || !reason) {
+                    return res.status(400).json({ error: 'All fields are required' });
+                }
+                // Validate interest level
+                const validInterestLevels = ['Not Interested', 'Somewhat Interested', 'Very Interested'];
+                if (!validInterestLevels.includes(interest_level)) {
+                    return res.status(400).json({ error: 'Invalid interest level' });
+                }
+                // Insert the new problem
+                const result = await db.run(
+                    'INSERT INTO problems (user_id, domain, problem_description, interest_level, reason) VALUES (?, ?, ?, ?, ?)',
+                    [req.user.id, domain, problem_description, interest_level, reason]
+                );
+                // Return the newly created problem using the correct property name from the result
+                const newProblem = await db.get('SELECT * FROM problems WHERE id = ?', [result.lastInsertRowid]);
+                res.status(201).json(newProblem);
+            } catch (err) {
+                console.error('Error creating problem:', err);
+                res.status(500).json({ error: 'Failed to create problem' });
+            }
+        });
+
+
+
+      // GET route to fetch a specific problem
+      app.get('/api/problems/:id', ensureAuthenticated, async (req, res) => {
+          try {
+              const problem = await db.get(
+                  'SELECT * FROM problems WHERE id = ? AND user_id = ?',
+                  [req.params.id, req.user.id]
+              );
+
+              if (!problem) {
+                  return res.status(404).json({ error: 'Problem not found' });
+              }
+
+              res.json(problem);
+          } catch (err) {
+              console.error('Error fetching problem:', err);
+              res.status(500).json({ error: 'Failed to fetch problem' });
+          }
+      });
+
+      // DELETE route to delete a problem
+      app.delete('/api/problems/:id', ensureAuthenticated, async (req, res) => {
+          try {
+              const problem = await db.get(
+                  'SELECT * FROM problems WHERE id = ? AND user_id = ?',
+                  [req.params.id, req.user.id]
+              );
+
+              if (!problem) {
+                  return res.status(404).json({ error: 'Problem not found' });
+              }
+
+              await db.run('DELETE FROM problems WHERE id = ?', [req.params.id]);
+              res.json({ message: 'Problem deleted successfully' });
+          } catch (err) {
+              console.error('Error deleting problem:', err);
+              res.status(500).json({ error: 'Failed to delete problem' });
+          }
+      });
+      // Problem suggestions route
+      app.get('/api/problem-suggestions', ensureAuthenticated, async (req, res) => {
+        try {
+          const domain = req.query.domain;
+
+          if (!domain) {
+            return res.status(400).json({ error: 'Domain is required' });
+          }
+
+          const suggestions = await openaiService.generateProblemSuggestions(domain);
+          res.json(suggestions);
+        } catch (error) {
+          console.error('Error in problem suggestions route:', error);
+          res.status(500).json({ error: 'Failed to generate problem suggestions' });
+        }
+      });
         // ✅ API Route to create a journey
         app.post('/api/journeys', ensureAuthenticated, (req, res) => {
             const { name } = req.body;
@@ -595,5 +732,4 @@ app.put('/api/actions/:actionId/fix', ensureAuthenticated, (req, res) => {
     changes: result.changes
   });
 });
-        // ✅ End of module.exports
-        };
+};

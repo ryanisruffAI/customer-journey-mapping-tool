@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Startup Builder - Problems</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Startup Builder</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/problems">🧠 Problems</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/validation">✅ Validation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">🗺️ Journeys</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div id="auth-status" class="alert d-none"></div>
+        <div class="row mb-4">
+            <div class="col">
+                <h1>Problem Ideation</h1>
+                <p class="lead">Identify strong startup problems aligned with your domain expertise.</p>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-success" id="newProblemBtn">
+                    <i class="bi bi-plus-circle"></i> Add New Problem
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Survey section (initially hidden) -->
+                <div class="card mb-4 d-none" id="surveySection">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Domain Expertise Survey</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="problemSurveyForm">
+                            <div id="domainQuestion" class="mb-4">
+                                <h5>What domain are you most knowledgeable about?</h5>
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="domainInput" placeholder="Domain">
+                                    <label for="domainInput">Your area of expertise</label>
+                                </div>
+                                <small class="text-muted">Examples: Healthcare, Education, Logistics, Retail, etc.</small>
+                            </div>
+
+                            <div id="problemQuestion" class="mb-4 d-none">
+                                <h5>What problem have you observed in this domain?</h5>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="problemDescription" style="height: 100px" placeholder="Problem description"></textarea>
+                                    <label for="problemDescription">Describe the problem</label>
+                                </div>
+                            </div>
+
+                            <div id="interestQuestion" class="mb-4 d-none">
+                                <h5>How interested are you in solving this problem?</h5>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="interestLevel" id="notInterested" value="Not Interested">
+                                    <label class="form-check-label" for="notInterested">Not Interested</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="interestLevel" id="somewhatInterested" value="Somewhat Interested">
+                                    <label class="form-check-label" for="somewhatInterested">Somewhat Interested</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="interestLevel" id="veryInterested" value="Very Interested">
+                                    <label class="form-check-label" for="veryInterested">Very Interested</label>
+                                </div>
+                            </div>
+
+                            <div id="reasonQuestion" class="mb-4 d-none">
+                                <h5>Why does this problem interest you?</h5>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="reasonInput" style="height: 100px" placeholder="Your reason"></textarea>
+                                    <label for="reasonInput">Explain your interest</label>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-danger d-none" id="problemError"></div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary d-none" id="prevBtn">Previous</button>
+                                <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
+                                <button type="button" class="btn btn-success d-none" id="saveBtn">Save Problem</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Problem list (initially shown) -->
+                <div id="problemListSection">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">My Problems</h5>
+                        </div>
+                        <div class="list-group list-group-flush" id="problemList">
+                            <!-- Problems will be inserted here by JavaScript -->
+                            <div class="list-group-item text-center py-5" id="loadingIndicator">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item text-center py-5 d-none" id="noProblemsMessage">
+                                <p class="text-muted">You haven't identified any problems yet. Click "Add New Problem" to get started!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Problem Suggestions Section -->
+                <div id="suggestionsSection" class="mb-4 d-none">
+                  <div class="card">
+                    <div class="card-header bg-primary text-white">
+                      <h5 class="mb-0">Suggested Problems in Your Domain</h5>
+                    </div>
+                    <div class="card-body">
+                      <p class="mb-3">Based on your expertise in <span id="userDomainText" class="fw-bold"></span>, here are some startup-worthy problems you might be interested in:</p>
+
+                      <div id="suggestionsLoading" class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                          <span class="visually-hidden">Loading suggestions...</span>
+                        </div>
+                        <p class="mt-2">Generating problem suggestions...</p>
+                      </div>
+
+                      <div id="suggestionsList" class="list-group mb-3">
+                        <!-- Suggestions will be added here -->
+                      </div>
+
+                      <div id="suggestionsError" class="alert alert-danger d-none" role="alert">
+                        Unable to generate suggestions at this time.
+                      </div>
+
+                      <button id="refreshSuggestionsBtn" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Suggestions
+                      </button>
+                    </div>
+                  </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">Tips for Good Problems</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-3">✅ <strong>Specific:</strong> Target a well-defined pain point</li>
+                            <li class="mb-3">✅ <strong>Significant:</strong> Address a problem people care about solving</li>
+                            <li class="mb-3">✅ <strong>Frequent:</strong> Occurs regularly enough to matter</li>
+                            <li class="mb-3">✅ <strong>Urgent:</strong> Creates immediate pressure to solve</li>
+                            <li class="mb-3">✅ <strong>Underserved:</strong> Current solutions are inadequate</li>
+                        </ul>
+                        <div class="alert alert-warning">
+                            <strong>Pro Tip:</strong> Focus on problems you personally understand and have experienced. Your domain expertise gives you unique insight!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Problem Item Template (hidden, will be cloned by JavaScript) -->
+    <template id="problemItemTemplate">
+        <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1 problem-description">Problem description goes here</h5>
+                    <p class="mb-1 text-muted">Domain: <span class="problem-domain">Domain name</span></p>
+                    <span class="badge rounded-pill bg-success problem-interest">Very Interested</span>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary view-problem-btn">View</button>
+                    <button class="btn btn-sm btn-outline-danger delete-problem-btn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Suggestion Item Template -->
+    <template id="suggestionItemTemplate">
+      <div class="list-group-item">
+        <h6 class="suggestion-title mb-2"></h6>
+        <p class="suggestion-description mb-2"></p>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="badge bg-primary">AI Suggested</span>
+          <button class="btn btn-sm btn-success save-suggestion-btn">
+            <i class="bi bi-plus-circle"></i> Add to My Problems
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="js/problems.js"></script>
+</body>
+</html>

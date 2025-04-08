@@ -1,3 +1,5 @@
+require('dotenv').config();
+console.log('OPENAI_API_KEY in app.js:', !!process.env.OPENAI_API_KEY);
 // dependencies
 const path = require('path');
 const express = require('express');

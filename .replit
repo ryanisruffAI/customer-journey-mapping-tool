@@ -11,6 +11,10 @@ build = ["sh", "-c", "make"]
 localPort = 1337
 externalPort = 80
 
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
 [workflows]
 runButton = "Start App"
 
