@@ -188,22 +188,65 @@ const checkAuth = function(req, res) {
               res.status(500).json({ error: 'Failed to delete problem' });
           }
       });
-      // Problem suggestions route
-      app.get('/api/problem-suggestions', ensureAuthenticated, async (req, res) => {
-        try {
-          const domain = req.query.domain;
+        // Problem suggestions route
+        app.post('/api/problem-suggestions', ensureAuthenticated, async (req, res) => {
+          try {
+            // Get the survey responses from the request body
+            const surveyData = req.body;
 
-          if (!domain) {
-            return res.status(400).json({ error: 'Domain is required' });
+            if (!surveyData.hobby || !surveyData.teach || !surveyData.talent || 
+                !surveyData.skill || !surveyData.insight) {
+              return res.status(400).json({ error: 'All survey responses are required' });
+            }
+
+            // Generate AI problems based on the survey responses
+            const suggestions = await openaiService.generateAIProblems(surveyData);
+            res.json(suggestions);
+          } catch (error) {
+            console.error('Error in problem suggestions route:', error);
+            res.status(500).json({ error: 'Failed to generate problem suggestions' });
           }
+        });
+        // Route to generate similar problems
+        app.post('/api/similar-problems', ensureAuthenticated, async (req, res) => {
+          try {
+            const { originalProblem, tag } = req.body;
 
-          const suggestions = await openaiService.generateProblemSuggestions(domain);
-          res.json(suggestions);
-        } catch (error) {
-          console.error('Error in problem suggestions route:', error);
-          res.status(500).json({ error: 'Failed to generate problem suggestions' });
-        }
-      });
+            if (!originalProblem) {
+              return res.status(400).json({ error: 'Original problem is required' });
+            }
+
+            // Generate similar problems
+            const similarProblems = await openaiService.generateSimilarProblems(
+              originalProblem,
+              tag || 'General'
+            );
+            res.json(similarProblems);
+          } catch (error) {
+            console.error('Error generating similar problems:', error);
+            res.status(500).json({ error: 'Failed to generate similar problems' });
+          }
+        });
+        // Route to track remaining AI-generated problems
+        app.get('/api/ai-problems/remaining', ensureAuthenticated, async (req, res) => {
+          try {
+            // Count the number of AI-generated problems for this user
+            const result = await db.get(
+              'SELECT COUNT(*) as count FROM problems WHERE user_id = ? AND ai_generated = 1',
+              [req.user.id]
+            );
+
+            // Calculate remaining problems (out of 20)
+            const used = result?.count || 0;
+            const remaining = Math.max(0, 20 - used);
+
+            res.json({ used, remaining });
+          } catch (error) {
+            console.error('Error counting AI problems:', error);
+            res.status(500).json({ error: 'Failed to count AI problems' });
+          }
+        });
+        
         // ✅ API Route to create a journey
         app.post('/api/journeys', ensureAuthenticated, (req, res) => {
             const { name } = req.body;

@@ -44,18 +44,90 @@
                 <p class="lead">Identify strong startup problems aligned with your domain expertise.</p>
             </div>
             <div class="col-auto">
-                <button type="button" class="btn btn-success" id="newProblemBtn">
-                    <i class="bi bi-plus-circle"></i> Add New Problem
+                <!-- Updated buttons -->
+                <button type="button" class="btn btn-primary" id="generateProblemsBtn">
+                    <i class="bi bi-robot"></i> Generate Problems with AI
                 </button>
+                <button type="button" class="btn btn-outline-secondary ms-2" id="manualProblemBtn">
+                    <i class="bi bi-plus-circle"></i> Manually Add Problem
+                </button>
+                <!-- AI Problem Counter -->
+                <div id="aiProblemCounter" class="text-muted mt-2 small d-none">
+                    <span id="remainingProblems">20</span> of 20 AI problems remaining
+                </div>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-8">
-                <!-- Survey section (initially hidden) -->
-                <div class="card mb-4 d-none" id="surveySection">
+                <!-- AI Survey section (initially hidden) -->
+                <div class="card mb-4 d-none" id="aiSurveySection">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="card-title mb-0">Domain Expertise Survey</h5>
+                        <h5 class="card-title mb-0">AI Problem Generator</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Answer these questions thoughtfully so our AI can tailor the problems to your skills and passions.</p>
+                        <form id="aiSurveyForm">
+                            <!-- Question 1 -->
+                            <div id="hobbyQuestion" class="mb-4">
+                                <h5>What are some of your favorite hobbies or things to do for fun?</h5>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="hobbyInput" style="height: 100px" placeholder="Your hobbies"></textarea>
+                                    <label for="hobbyInput">Your hobbies and interests</label>
+                                </div>
+                            </div>
+
+                            <!-- Question 2 -->
+                            <div id="teachQuestion" class="mb-4 d-none">
+                                <h5>If you needed to teach a short class on anything, what would you feel most confident teaching?</h5>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="teachInput" style="height: 100px" placeholder="Topics you could teach"></textarea>
+                                    <label for="teachInput">Topics you're knowledgeable about</label>
+                                </div>
+                            </div>
+
+                            <!-- Question 3 -->
+                            <div id="talentQuestion" class="mb-4 d-none">
+                                <h5>What is something friends often say you're great at?</h5>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="talentInput" style="height: 100px" placeholder="Your talents"></textarea>
+                                    <label for="talentInput">Your recognized talents</label>
+                                </div>
+                            </div>
+
+                            <!-- Question 4 -->
+                            <div id="skillQuestion" class="mb-4 d-none">
+                                <h5>What skills have you developed through personal experiences either in the workplace or outside of work?</h5>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="skillInput" style="height: 100px" placeholder="Your skills"></textarea>
+                                    <label for="skillInput">Your developed skills</label>
+                                </div>
+                            </div>
+
+                            <!-- Question 5 -->
+                            <div id="insightQuestion" class="mb-4 d-none">
+                                <h5>What's a challenge you've overcome in your personal life that gave you unique insights?</h5>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="insightInput" style="height: 100px" placeholder="Your insights"></textarea>
+                                    <label for="insightInput">Challenges and insights</label>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-danger d-none" id="aiSurveyError"></div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary d-none" id="aiPrevBtn">Previous</button>
+                                <button type="button" class="btn btn-primary" id="aiNextBtn">Next</button>
+                                <button type="button" class="btn btn-success d-none" id="generateBtn">Generate Problems</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Manual Problem section (initially hidden) -->
+                <div class="card mb-4 d-none" id="manualSurveySection">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Manually Add Problem</h5>
                     </div>
                     <div class="card-body">
                         <form id="problemSurveyForm">
@@ -125,7 +197,7 @@
                                 </div>
                             </div>
                             <div class="list-group-item text-center py-5 d-none" id="noProblemsMessage">
-                                <p class="text-muted">You haven't identified any problems yet. Click "Add New Problem" to get started!</p>
+                                <p class="text-muted">You haven't identified any problems yet. Click "Generate Problems with AI" or "Manually Add Problem" to get started!</p>
                             </div>
                         </div>
                     </div>
@@ -135,10 +207,10 @@
                 <div id="suggestionsSection" class="mb-4 d-none">
                   <div class="card">
                     <div class="card-header bg-primary text-white">
-                      <h5 class="mb-0">Suggested Problems in Your Domain</h5>
+                      <h5 class="mb-0">AI-Generated Problem Suggestions</h5>
                     </div>
                     <div class="card-body">
-                      <p class="mb-3">Based on your expertise in <span id="userDomainText" class="fw-bold"></span>, here are some startup-worthy problems you might be interested in:</p>
+                      <p class="mb-3">Based on your responses, here are some startup-worthy problems you might be interested in:</p>
 
                       <div id="suggestionsLoading" class="text-center py-3">
                         <div class="spinner-border text-primary" role="status">
@@ -193,25 +265,46 @@
                     <h5 class="mb-1 problem-description">Problem description goes here</h5>
                     <p class="mb-1 text-muted">Domain: <span class="problem-domain">Domain name</span></p>
                     <span class="badge rounded-pill bg-success problem-interest">Very Interested</span>
+                    <span class="badge rounded-pill bg-secondary problem-tag ms-1">Tag</span>
                 </div>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-outline-primary view-problem-btn">View</button>
                     <button class="btn btn-sm btn-outline-danger delete-problem-btn">Delete</button>
+                    <button class="btn btn-sm btn-outline-success validate-problem-btn d-none">Solve This</button>
+                    <button class="btn btn-sm btn-outline-info similar-problems-btn">Generate Similar</button>
+                </div>
+            </div>
+            <div class="mt-2 d-none problem-edit-section">
+                <div class="form-floating mb-2">
+                    <textarea class="form-control problem-edit-description" style="height: 80px"></textarea>
+                    <label>Edit Problem Description</label>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-sm btn-secondary cancel-edit-btn me-2">Cancel</button>
+                    <button class="btn btn-sm btn-primary save-edit-btn">Save Changes</button>
                 </div>
             </div>
         </div>
     </template>
 
-    <!-- Suggestion Item Template -->
+    <!-- AI Suggestion Item Template -->
     <template id="suggestionItemTemplate">
-      <div class="list-group-item">
-        <h6 class="suggestion-title mb-2"></h6>
-        <p class="suggestion-description mb-2"></p>
+      <div class="list-group-item suggestion-item">
+        <div class="mb-2">
+            <span class="badge bg-primary suggestion-tag">Tag</span>
+        </div>
+        <h6 class="suggestion-title mb-2">Problem Title</h6>
+        <p class="suggestion-description mb-3">Problem description text goes here</p>
         <div class="d-flex justify-content-between align-items-center">
-          <span class="badge bg-primary">AI Suggested</span>
-          <button class="btn btn-sm btn-success save-suggestion-btn">
-            <i class="bi bi-plus-circle"></i> Add to My Problems
-          </button>
+          <div>
+            <button class="btn btn-sm btn-outline-secondary not-interested-btn">Not Interested</button>
+            <button class="btn btn-sm btn-outline-primary somewhat-interested-btn">Somewhat Interested</button>
+            <button class="btn btn-sm btn-outline-success very-interested-btn">Very Interested</button>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-outline-info similar-suggestion-btn">Generate Similar</button>
+            <button class="btn btn-sm btn-outline-success validate-suggestion-btn">Solve This</button>
+          </div>
         </div>
       </div>
     </template>
