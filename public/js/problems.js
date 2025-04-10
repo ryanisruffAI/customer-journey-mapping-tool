@@ -1,17 +1,3 @@
-Sure, I'll show you exactly what to do. Here's a clear step-by-step approach:
-
-## Step 1: Back up your current file
-
-Before making any changes, create a backup of your current problems.js file. You can do this by making a copy and renaming it to `problems.js.backup`.
-
-## Step 2: Replace the file content
-
-Open your `problems.js` file and:
-
-1. **DELETE EVERYTHING** in the current file
-2. **PASTE** this new code:
-
-```javascript
 document.addEventListener('DOMContentLoaded', function() {
     // Add defensive coding to check if elements exist before using them
 
@@ -1288,7 +1274,7 @@ function showSimilarProblemsSection(similarProblems) {
         });
     } else {
         // Display a message if no problems were found
-        similarProblemsList.innerHTML = '<div class="alert alert-warning">No similar problems found. Try with a different problem.</div>';
+similarProblemsList.innerHTML = '<div class="alert alert-warning">No similar problems found. Try with a different problem.</div>';
     }
 
     // Add event listener to close button

@@ -32,9 +32,24 @@ const checkAuth = function(req, res) {
         app.get('/api/check-auth', checkAuth);
 
       // Home route
-      app.get('/', function (req, res) {
-          res.render('index', { user : req.user });
-      });
+        // Home route - THIS IS CRITICAL
+        app.get('/', function (req, res) {
+            // If user is logged in, redirect to problems page
+            if (req.isAuthenticated()) {
+                return res.redirect('/problems.html');
+            } else {
+                // If not logged in, show the login page
+                return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+            }
+        });
+
+        // Serve static dashboard page but enforce problems redirect if user is coming from login
+        app.get('/dashboard.html', function(req, res, next) {
+            if (req.headers.referer && req.headers.referer.includes('/login')) {
+                return res.redirect('/problems.html');
+            }
+            next();
+        });
 
       // Registration routes
       app.get('/register', function(req, res) {
@@ -71,17 +86,18 @@ const checkAuth = function(req, res) {
               }
               req.logIn(user, function(err) {
                   if (err) { return next(err); }
-                  return res.redirect('/');
+                  return res.redirect('/problems.html');
               });
           })(req, res, next);
       });
 
-      // Logout route
-      app.get('/logout', function(req, res) {
-          req.logout();
-          res.redirect('/');
-      });
-
+        // Logout route
+        app.get('/logout', function(req, res, next) {
+            req.logout(function(err) {
+                if (err) { return next(err); }
+                res.redirect('/');
+            });
+        });
       // Ping test route
       app.get('/ping', function(req, res) {
           res.send("pong!", 200);
@@ -775,4 +791,11 @@ app.put('/api/actions/:actionId/fix', ensureAuthenticated, (req, res) => {
     changes: result.changes
   });
 });
+        // Add this catch-all route at the end to handle direct page access
+        app.get('*.html', function(req, res, next) {
+            if (!req.isAuthenticated()) {
+                return res.redirect('/');
+            }
+            next();
+        });
 };

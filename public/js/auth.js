@@ -6,6 +6,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginError = document.getElementById('loginError');
     const registerError = document.getElementById('registerError');
 
+    // Check if we're already authenticated
+    fetch('/api/check-auth')
+        .then(response => response.json())
+        .then(data => {
+            if (data.authenticated) {
+                // If already authenticated, redirect to problems page
+                window.location.href = '/problems.html';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking authentication:', error);
+        });
+
     // Handle login form submission
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -25,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (response.redirected) {
-                window.location.href = '/dashboard.html';
+                window.location.href = '/problems.html';
             } else {
                 return response.json().then(data => {
                     throw new Error(data.info || 'Login failed');
@@ -65,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (response.redirected) {
-                window.location.href = '/dashboard.html';
+                window.location.href = '/problems.html';
             } else {
                 return response.json().then(data => {
                     throw new Error(data.info || 'Registration failed');
