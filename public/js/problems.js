@@ -1,4 +1,29 @@
+Sure, I'll show you exactly what to do. Here's a clear step-by-step approach:
+
+## Step 1: Back up your current file
+
+Before making any changes, create a backup of your current problems.js file. You can do this by making a copy and renaming it to `problems.js.backup`.
+
+## Step 2: Replace the file content
+
+Open your `problems.js` file and:
+
+1. **DELETE EVERYTHING** in the current file
+2. **PASTE** this new code:
+
+```javascript
 document.addEventListener('DOMContentLoaded', function() {
+    // Add defensive coding to check if elements exist before using them
+
+    // Helper function to safely get elements
+    function safeGetElement(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`Element with ID '${id}' not found in the DOM`);
+        }
+        return element;
+    }
+
     // Authentication status check
     fetch('/api/check-auth', {
         method: 'GET',
@@ -9,7 +34,9 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(res => res.json())
     .then(data => {
-        const authStatus = document.getElementById('auth-status');
+        const authStatus = safeGetElement('auth-status');
+        if (!authStatus) return; // Skip if element doesn't exist
+
         if (data.authenticated) {
             // Track user's remaining AI problems if authenticated
             fetchRemainingAIProblems();
@@ -25,89 +52,114 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(err => {
         console.error('Auth check error:', err);
-        const authStatus = document.getElementById('auth-status');
+        const authStatus = safeGetElement('auth-status');
+        if (!authStatus) return; // Skip if element doesn't exist
+
         authStatus.textContent = 'Error checking authentication status.';
         authStatus.className = 'alert alert-danger my-3';
         authStatus.style.display = 'block';
     });
 
-    // Element references
-    const generateProblemsBtn = document.getElementById('generateProblemsBtn');
-    const manualProblemBtn = document.getElementById('manualProblemBtn');
-    const aiSurveySection = document.getElementById('aiSurveySection');
-    const manualSurveySection = document.getElementById('manualSurveySection');
-    const problemListSection = document.getElementById('problemListSection');
-    const problemList = document.getElementById('problemList');
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const noProblemsMessage = document.getElementById('noProblemsMessage');
-    const aiProblemCounter = document.getElementById('aiProblemCounter');
+    // Element references - with null checks
+    const generateProblemsBtn = safeGetElement('generateProblemsBtn');
+    const manualProblemBtn = safeGetElement('manualProblemBtn');
+    const aiSurveySection = safeGetElement('aiSurveySection');
+    const manualSurveySection = safeGetElement('manualSurveySection');
+    const problemListSection = safeGetElement('problemListSection');
+    const problemList = safeGetElement('problemList');
+    const loadingIndicator = safeGetElement('loadingIndicator');
+    const noProblemsMessage = safeGetElement('noProblemsMessage');
+    const aiProblemCounter = safeGetElement('aiProblemCounter');
 
     // Manual Survey navigation elements
-    const nextBtn = document.getElementById('nextBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const saveBtn = document.getElementById('saveBtn');
+    const nextBtn = safeGetElement('nextBtn');
+    const prevBtn = safeGetElement('prevBtn');
+    const saveBtn = safeGetElement('saveBtn');
 
     // Manual Survey question sections
-    const domainQuestion = document.getElementById('domainQuestion');
-    const problemQuestion = document.getElementById('problemQuestion');
-    const interestQuestion = document.getElementById('interestQuestion');
-    const reasonQuestion = document.getElementById('reasonQuestion');
+    const domainQuestion = safeGetElement('domainQuestion');
+    const problemQuestion = safeGetElement('problemQuestion');
+    const interestQuestion = safeGetElement('interestQuestion');
+    const reasonQuestion = safeGetElement('reasonQuestion');
 
     // Manual Survey inputs
-    const domainInput = document.getElementById('domainInput');
-    const problemDescription = document.getElementById('problemDescription');
+    const domainInput = safeGetElement('domainInput');
+    const problemDescription = safeGetElement('problemDescription');
     const interestLevels = document.getElementsByName('interestLevel');
-    const reasonInput = document.getElementById('reasonInput');
-    const problemError = document.getElementById('problemError');
+    const reasonInput = safeGetElement('reasonInput');
+    const problemError = safeGetElement('problemError');
 
     // AI Survey navigation elements
-    const aiNextBtn = document.getElementById('aiNextBtn');
-    const aiPrevBtn = document.getElementById('aiPrevBtn');
-    const generateBtn = document.getElementById('generateBtn');
+    const aiNextBtn = safeGetElement('aiNextBtn');
+    const aiPrevBtn = safeGetElement('aiPrevBtn');
+    const generateBtn = safeGetElement('generateBtn');
 
     // AI Survey question sections
-    const hobbyQuestion = document.getElementById('hobbyQuestion');
-    const teachQuestion = document.getElementById('teachQuestion');
-    const talentQuestion = document.getElementById('talentQuestion');
-    const skillQuestion = document.getElementById('skillQuestion');
-    const insightQuestion = document.getElementById('insightQuestion');
+    const hobbyQuestion = safeGetElement('hobbyQuestion');
+    const teachQuestion = safeGetElement('teachQuestion');
+    const talentQuestion = safeGetElement('talentQuestion');
+    const skillQuestion = safeGetElement('skillQuestion');
+    const insightQuestion = safeGetElement('insightQuestion');
 
     // AI Survey inputs
-    const hobbyInput = document.getElementById('hobbyInput');
-    const teachInput = document.getElementById('teachInput');
-    const talentInput = document.getElementById('talentInput');
-    const skillInput = document.getElementById('skillInput');
-    const insightInput = document.getElementById('insightInput');
-    const aiSurveyError = document.getElementById('aiSurveyError');
+    const hobbyInput = safeGetElement('hobbyInput');
+    const teachInput = safeGetElement('teachInput');
+    const talentInput = safeGetElement('talentInput');
+    const skillInput = safeGetElement('skillInput');
+    const insightInput = safeGetElement('insightInput');
+    const aiSurveyError = safeGetElement('aiSurveyError');
 
     // Suggestions elements
-    const suggestionsSection = document.getElementById('suggestionsSection');
-    const suggestionsList = document.getElementById('suggestionsList');
-    const suggestionsLoading = document.getElementById('suggestionsLoading');
-    const refreshSuggestionsBtn = document.getElementById('refreshSuggestionsBtn');
+    const suggestionsSection = safeGetElement('suggestionsSection');
+    const suggestionsList = safeGetElement('suggestionsList');
+    const suggestionsLoading = safeGetElement('suggestionsLoading');
+    const refreshSuggestionsBtn = safeGetElement('refreshSuggestionsBtn');
 
     // Current question index for the manual and AI surveys (0-based)
     let currentQuestionIndex = 0;
     let aiCurrentQuestionIndex = 0;
-    const manualQuestions = [domainQuestion, problemQuestion, interestQuestion, reasonQuestion];
-    const aiQuestions = [hobbyQuestion, teachQuestion, talentQuestion, skillQuestion, insightQuestion];
+
+    // Only define these if all required elements exist
+    const manualQuestions = [domainQuestion, problemQuestion, interestQuestion, reasonQuestion].filter(Boolean);
+    const aiQuestions = [hobbyQuestion, teachQuestion, talentQuestion, skillQuestion, insightQuestion].filter(Boolean);
 
     // Store AI-generated problem count
     let remainingAIProblems = 20;
 
-    // Event Listeners for main buttons
-    generateProblemsBtn.addEventListener('click', startAISurvey);
-    manualProblemBtn.addEventListener('click', startManualProblem);
+    // Event Listeners for main buttons - add null checks
+    if (generateProblemsBtn) {
+        generateProblemsBtn.addEventListener('click', startAISurvey);
+    }
+
+    if (manualProblemBtn) {
+        manualProblemBtn.addEventListener('click', startManualProblem);
+    }
 
     // Event Listeners for manual problem survey
-    nextBtn.addEventListener('click', goToNextQuestion);
-    prevBtn.addEventListener('click', goToPreviousQuestion);
-    saveBtn.addEventListener('click', saveProblem);
+    if (nextBtn) {
+        nextBtn.addEventListener('click', goToNextQuestion);
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', goToPreviousQuestion);
+    }
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', saveProblem);
+    }
 
     // Event Listeners for AI problem survey
-    aiNextBtn.addEventListener('click', goToNextAIQuestion);
-    aiPrevBtn.addEventListener('click', goToPreviousAIQuestion);
-    generateBtn.addEventListener('click', generateAIProblems);
+    if (aiNextBtn) {
+        aiNextBtn.addEventListener('click', goToNextAIQuestion);
+    }
+
+    if (aiPrevBtn) {
+        aiPrevBtn.addEventListener('click', goToPreviousAIQuestion);
+    }
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', generateAIProblems);
+    }
 
     // Event listener for refresh suggestions button
     if (refreshSuggestionsBtn) {
@@ -116,8 +168,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Load problems on page load
-    loadProblems();
+    // Load problems on page load if the required elements exist
+    if (problemList && loadingIndicator) {
+        loadProblems();
+    } else {
+        console.warn('Cannot load problems - required DOM elements missing');
+    }
 
     // Functions for fetching AI problem count
     function fetchRemainingAIProblems() {
@@ -148,16 +204,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateAIProblemCounter() {
-        const counterElement = document.getElementById('remainingProblems');
+        const counterElement = safeGetElement('remainingProblems');
         if (counterElement) {
             counterElement.textContent = remainingAIProblems;
         }
 
         // Show counter only if there are less than 20 problems left
-        if (remainingAIProblems < 20) {
-            aiProblemCounter.classList.remove('d-none');
-        } else {
-            aiProblemCounter.classList.add('d-none');
+        if (aiProblemCounter) {
+            if (remainingAIProblems < 20) {
+                aiProblemCounter.classList.remove('d-none');
+            } else {
+                aiProblemCounter.classList.add('d-none');
+            }
         }
     }
 
@@ -169,9 +227,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Functions for showing/hiding survey sections
     function startManualProblem() {
+        if (!manualSurveySection || !aiSurveySection || !problemListSection || !suggestionsSection) {
+            console.error('Cannot start manual problem - required DOM elements missing');
+            return;
+        }
+
         // Reset form
-        document.getElementById('problemSurveyForm').reset();
-        problemError.classList.add('d-none');
+        const form = document.getElementById('problemSurveyForm');
+        if (form) form.reset();
+
+        if (problemError) problemError.classList.add('d-none');
 
         // Show manual survey, hide other sections
         manualSurveySection.classList.remove('d-none');
@@ -185,9 +250,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function startAISurvey() {
+        if (!aiSurveySection || !manualSurveySection || !problemListSection || !suggestionsSection) {
+            console.error('Cannot start AI survey - required DOM elements missing');
+            return;
+        }
+
         // Reset form
-        document.getElementById('aiSurveyForm').reset();
-        aiSurveyError.classList.add('d-none');
+        const form = document.getElementById('aiSurveyForm');
+        if (form) form.reset();
+
+        if (aiSurveyError) aiSurveyError.classList.add('d-none');
 
         // Show AI survey, hide other sections
         aiSurveySection.classList.remove('d-none');
@@ -223,16 +295,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateQuestionVisibility() {
+        if (manualQuestions.length === 0) {
+            console.warn('No manual questions found in DOM');
+            return;
+        }
+
         // Hide all questions
-        manualQuestions.forEach(q => q.classList.add('d-none'));
+        manualQuestions.forEach(q => {
+            if (q) q.classList.add('d-none');
+        });
 
-        // Show current question
-        manualQuestions[currentQuestionIndex].classList.remove('d-none');
+        // Show current question if it exists
+        if (manualQuestions[currentQuestionIndex]) {
+            manualQuestions[currentQuestionIndex].classList.remove('d-none');
+        }
 
-        // Update buttons
-        prevBtn.classList.toggle('d-none', currentQuestionIndex === 0);
-        nextBtn.classList.toggle('d-none', currentQuestionIndex === manualQuestions.length - 1);
-        saveBtn.classList.toggle('d-none', currentQuestionIndex !== manualQuestions.length - 1);
+        // Update buttons if they exist
+        if (prevBtn) {
+            prevBtn.classList.toggle('d-none', currentQuestionIndex === 0);
+        }
+
+        if (nextBtn) {
+            nextBtn.classList.toggle('d-none', currentQuestionIndex === manualQuestions.length - 1);
+        }
+
+        if (saveBtn) {
+            saveBtn.classList.toggle('d-none', currentQuestionIndex !== manualQuestions.length - 1);
+        }
     }
 
     // Functions for AI survey navigation
@@ -258,34 +347,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateAIQuestionVisibility() {
+        if (aiQuestions.length === 0) {
+            console.warn('No AI questions found in DOM');
+            return;
+        }
+
         // Hide all questions
-        aiQuestions.forEach(q => q.classList.add('d-none'));
+        aiQuestions.forEach(q => {
+            if (q) q.classList.add('d-none');
+        });
 
-        // Show current question
-        aiQuestions[aiCurrentQuestionIndex].classList.remove('d-none');
+        // Show current question if it exists
+        if (aiQuestions[aiCurrentQuestionIndex]) {
+            aiQuestions[aiCurrentQuestionIndex].classList.remove('d-none');
+        }
 
-        // Update buttons
-        aiPrevBtn.classList.toggle('d-none', aiCurrentQuestionIndex === 0);
-        aiNextBtn.classList.toggle('d-none', aiCurrentQuestionIndex === aiQuestions.length - 1);
-        generateBtn.classList.toggle('d-none', aiCurrentQuestionIndex !== aiQuestions.length - 1);
+        // Update buttons if they exist
+        if (aiPrevBtn) {
+            aiPrevBtn.classList.toggle('d-none', aiCurrentQuestionIndex === 0);
+        }
+
+        if (aiNextBtn) {
+            aiNextBtn.classList.toggle('d-none', aiCurrentQuestionIndex === aiQuestions.length - 1);
+        }
+
+        if (generateBtn) {
+            generateBtn.classList.toggle('d-none', aiCurrentQuestionIndex !== aiQuestions.length - 1);
+        }
     }
 
     // Validation functions
     function validateCurrentQuestion() {
         // Clear previous errors
-        problemError.classList.add('d-none');
-        problemError.textContent = '';
+        if (problemError) {
+            problemError.classList.add('d-none');
+            problemError.textContent = '';
+        } else {
+            return false; // Can't validate without error display
+        }
 
         // Validate based on the current question
         switch (currentQuestionIndex) {
             case 0: // Domain
-                if (!domainInput.value.trim()) {
+                if (!domainInput || !domainInput.value.trim()) {
                     showError('Please enter your domain of expertise', problemError);
                     return false;
                 }
                 break;
             case 1: // Problem
-                if (!problemDescription.value.trim()) {
+                if (!problemDescription || !problemDescription.value.trim()) {
                     showError('Please describe the problem', problemError);
                     return false;
                 }
@@ -304,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 break;
             case 3: // Reason
-                if (!reasonInput.value.trim()) {
+                if (!reasonInput || !reasonInput.value.trim()) {
                     showError('Please explain your interest in this problem', problemError);
                     return false;
                 }
@@ -316,37 +426,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function validateCurrentAIQuestion() {
         // Clear previous errors
+        if (!aiSurveyError) return false; // Can't validate without error display
+
         aiSurveyError.classList.add('d-none');
         aiSurveyError.textContent = '';
 
         // Validate based on the current question
         switch (aiCurrentQuestionIndex) {
             case 0: // Hobbies
-                if (!hobbyInput.value.trim()) {
+                if (!hobbyInput || !hobbyInput.value.trim()) {
                     showError('Please share some of your hobbies or interests', aiSurveyError);
                     return false;
                 }
                 break;
             case 1: // Teaching
-                if (!teachInput.value.trim()) {
+                if (!teachInput || !teachInput.value.trim()) {
                     showError('Please share what you could confidently teach', aiSurveyError);
                     return false;
                 }
                 break;
             case 2: // Talents
-                if (!talentInput.value.trim()) {
+                if (!talentInput || !talentInput.value.trim()) {
                     showError('Please share what others say you\'re great at', aiSurveyError);
                     return false;
                 }
                 break;
             case 3: // Skills
-                if (!skillInput.value.trim()) {
+                if (!skillInput || !skillInput.value.trim()) {
                     showError('Please share skills you\'ve developed', aiSurveyError);
                     return false;
                 }
                 break;
             case 4: // Insights
-                if (!insightInput.value.trim()) {
+                if (!insightInput || !insightInput.value.trim()) {
                     showError('Please share a challenge that gave you insights', aiSurveyError);
                     return false;
                 }
@@ -357,6 +469,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showError(message, errorElement) {
+        if (!errorElement) {
+            console.error('Error element not found for message:', message);
+            return;
+        }
         errorElement.textContent = message;
         errorElement.classList.remove('d-none');
     }
@@ -375,6 +491,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveProblem() {
         // Validate the current question (reason)
         if (!validateCurrentQuestion()) {
+            return;
+        }
+
+        if (!domainInput || !problemDescription || !reasonInput) {
+            console.error('Required form elements missing');
             return;
         }
 
@@ -426,19 +547,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Reset form if we're not in suggestions mode
             if (!fromSuggestions) {
-                if (manualSurveySection.classList.contains('d-none')) {
-                    document.getElementById('aiSurveyForm').reset();
-                } else {
-                    document.getElementById('problemSurveyForm').reset();
-                }
+                if (manualSurveySection && aiSurveySection) {
+                    if (manualSurveySection.classList.contains('d-none')) {
+                        const form = document.getElementById('aiSurveyForm');
+                        if (form) form.reset();
+                    } else {
+                        const form = document.getElementById('problemSurveyForm');
+                        if (form) form.reset();
+                    }
 
-                manualSurveySection.classList.add('d-none');
-                aiSurveySection.classList.add('d-none');
-                suggestionsSection.classList.add('d-none');
+                    manualSurveySection.classList.add('d-none');
+                    aiSurveySection.classList.add('d-none');
+                    if (suggestionsSection) suggestionsSection.classList.add('d-none');
+                }
             }
 
             // Always show the problem list
-            problemListSection.classList.remove('d-none');
+            if (problemListSection) {
+                problemListSection.classList.remove('d-none');
+            }
 
             // If it was an AI-generated problem, update the counter
             if (problemData.ai_generated) {
@@ -449,11 +576,20 @@ document.addEventListener('DOMContentLoaded', function() {
             loadProblems();
         })
         .catch(error => {
-            const errorElement = manualSurveySection.classList.contains('d-none') ? 
-                aiSurveyError : problemError;
-            showError('Error saving problem: ' + error.message, errorElement);
+            console.error('Error saving problem:', error);
+
+            const errorElement = manualSurveySection && !manualSurveySection.classList.contains('d-none') 
+                ? problemError 
+                : aiSurveyError;
+
+            if (errorElement) {
+                showError('Error saving problem: ' + error.message, errorElement);
+            } else {
+                alert('Error saving problem: ' + error.message);
+            }
         });
     }
+
     // AI Problem Generation
     function generateAIProblems() {
         // Validate the current question (insights)
@@ -463,7 +599,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Check if we have any AI problems left
         if (remainingAIProblems <= 0) {
-            showError('You have reached the limit of AI-generated problems. Please rate or delete some existing problems to generate more.', aiSurveyError);
+            if (aiSurveyError) {
+                showError('You have reached the limit of AI-generated problems. Please rate or delete some existing problems to generate more.', aiSurveyError);
+            }
+            return;
+        }
+
+        if (!suggestionsSection || !suggestionsLoading || !suggestionsList || !aiSurveySection) {
+            console.error('Required DOM elements for AI problem generation missing');
             return;
         }
 
@@ -474,6 +617,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Hide AI survey section
         aiSurveySection.classList.add('d-none');
+
+        if (!hobbyInput || !teachInput || !talentInput || !skillInput || !insightInput) {
+            console.error('Required survey input elements missing');
+            suggestionsLoading.classList.add('d-none');
+            suggestionsList.innerHTML = '<div class="alert alert-danger">Error: Required form elements are missing</div>';
+            return;
+        }
 
         // Collect all answers from the AI survey
         const surveyData = {
@@ -507,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             // Hide loading
-            suggestionsLoading.classList.add('d-none');
+            if (suggestionsLoading) suggestionsLoading.classList.add('d-none');
 
             console.log("Received data:", data);
 
@@ -518,33 +668,54 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (data && Array.isArray(data.problems)) {
                 // If data has a problems property that is an array
                 displaySuggestions(data.problems);
-            } else {
+            } else if (suggestionsList) {
                 suggestionsList.innerHTML = '<div class="alert alert-warning">No suggestions could be generated. Please try providing more detailed answers.</div>';
             }
         })
         .catch(error => {
             console.error('Error fetching suggestions:', error);
-            suggestionsLoading.classList.add('d-none');
-            suggestionsList.innerHTML = `<div class="alert alert-danger">Error generating suggestions: ${error.message}. Please try again later.</div>`;
+            if (suggestionsLoading) suggestionsLoading.classList.add('d-none');
+            if (suggestionsList) {
+                suggestionsList.innerHTML = `<div class="alert alert-danger">Error generating suggestions: ${error.message}. Please try again later.</div>`;
+            }
         });
     }
 
     function displaySuggestions(suggestions) {
+        if (!suggestionsList) {
+            console.error('Suggestions list element missing');
+            return;
+        }
+
         suggestionsList.innerHTML = '';
 
+        const template = document.getElementById('suggestionItemTemplate');
+        if (!template) {
+            console.error('Suggestion item template not found');
+            suggestionsList.innerHTML = '<div class="alert alert-danger">Error: Template not found</div>';
+            return;
+        }
+
         suggestions.forEach(suggestion => {
-            const template = document.getElementById('suggestionItemTemplate');
             const clone = document.importNode(template.content, true);
 
-            // Set suggestion data - updated to use problem_description field
-            clone.querySelector('.suggestion-title').textContent = suggestion.problem_description || suggestion.title || '';
+            // Set suggestion data - check elements exist first
+            const titleEl = clone.querySelector('.suggestion-title');
+            if (titleEl) {
+                titleEl.textContent = suggestion.problem_description || suggestion.title || '';
+            }
 
             // Optionally show domain in the description section
-            clone.querySelector('.suggestion-description').textContent = suggestion.domain || '';
+            const descEl = clone.querySelector('.suggestion-description');
+            if (descEl) {
+                descEl.textContent = suggestion.domain || '';
+            }
 
             // Set tag
             const tagElement = clone.querySelector('.suggestion-tag');
-            tagElement.textContent = suggestion.tag || 'AI-Generated';
+            if (tagElement) {
+                tagElement.textContent = suggestion.tag || 'AI-Generated';
+            }
 
             // Function to save an AI-generated problem
             function saveAIProblem(suggestion, interest) {
@@ -573,21 +744,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const somewhatInterestedBtn = clone.querySelector('.somewhat-interested-btn');
             const veryInterestedBtn = clone.querySelector('.very-interested-btn');
 
-            notInterestedBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you\'re not interested in this problem? It will be removed.')) {
-                    this.closest('.suggestion-item').remove();
-                }
-            });
+            if (notInterestedBtn) {
+                notInterestedBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you\'re not interested in this problem? It will be removed.')) {
+                        const item = this.closest('.suggestion-item');
+                        if (item) item.remove();
+                    }
+                });
+            }
 
-            somewhatInterestedBtn.addEventListener('click', function() {
-                saveAIProblem(suggestion, 'Somewhat Interested');
-                this.closest('.suggestion-item').remove();
-            });
+            if (somewhatInterestedBtn) {
+                somewhatInterestedBtn.addEventListener('click', function() {
+                    saveAIProblem(suggestion, 'Somewhat Interested');
+                    const item = this.closest('.suggestion-item');
+                    if (item) item.remove();
+                });
+            }
 
-            veryInterestedBtn.addEventListener('click', function() {
-                saveAIProblem(suggestion, 'Very Interested');
-                this.closest('.suggestion-item').remove();
-            });
+            if (veryInterestedBtn) {
+                veryInterestedBtn.addEventListener('click', function() {
+                    saveAIProblem(suggestion, 'Very Interested');
+                    const item = this.closest('.suggestion-item');
+                    if (item) item.remove();
+                });
+            }
 
             // Add event listeners for other buttons
             const similarBtn = clone.querySelector('.similar-suggestion-btn');
@@ -598,145 +778,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 similarBtn.style.display = 'none';
             }
 
-            validateBtn.addEventListener('click', function() {
-                validateProblem(suggestion);
-            });
+            if (validateBtn) {
+                validateBtn.addEventListener('click', function() {
+                    validateProblem(suggestion);
+                });
+            }
 
             suggestionsList.appendChild(clone);
         });
     }
-    function saveProblemToServer(problemData) {
-        // Save to server
-        fetch('/api/problems', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': 'MY_SECRET_TOKEN'
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(problemData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                // If response is not OK, try to get its text and throw as an error
-                return response.text().then(text => {
-                    throw new Error(text || 'Network response was not ok');
-                });
-            }
-            // Get the raw response text for debugging
-            return response.text().then(text => {
-                console.log('Raw response text:', text);
-                // Attempt to parse the response text as JSON
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
-                    throw new Error('Could not parse JSON: ' + text);
-                }
-            });
-        })
-        .then(data => {
-            // If this was called from the suggestions section, DON'T hide it
-            const fromSuggestions = suggestionsSection &&
-              !suggestionsSection.classList.contains('d-none');
 
-            // Reset form if we're not in suggestions mode
-            if (!fromSuggestions) {
-                if (manualSurveySection.classList.contains('d-none')) {
-                    document.getElementById('aiSurveyForm').reset();
-                } else {
-                    document.getElementById('problemSurveyForm').reset();
-                }
-
-                manualSurveySection.classList.add('d-none');
-                aiSurveySection.classList.add('d-none');
-                suggestionsSection.classList.add('d-none');
-            }
-
-            // Always show the problem list
-            problemListSection.classList.remove('d-none');
-
-            // If it was an AI-generated problem, update the counter
-            if (problemData.ai_generated) {
-                updateRemainingAIProblems();
-            }
-
-            // Reload problems to include the new one
-            loadProblems();
-        })
-        .catch(error => {
-            const errorElement = manualSurveySection.classList.contains('d-none')
-                ? aiSurveyError
-                : problemError;
-            showError('Error saving problem: ' + error.message, errorElement);
-        });
-    }
-
-
-    function generateSimilarProblems(originalProblem, event) {
-        // Check if we have any AI problems left
-        if (remainingAIProblems < 2) {
-            alert('You need at least 2 remaining AI problem slots to generate similar problems.');
+    function validateProblem(problem) {
+        // If it's a suggestion, save it first with 'Very Interested' status
+        if (!problem.id) {
+            saveAIProblem(problem, 'Very Interested');
+            // After saving, we'll need to navigate to the validation page
+            // This will be handled in the next steps
             return;
         }
 
-        // Get the event target (the button that was clicked)
-        const clickedButton = event ? event.target : this;
+        // For existing problems, just navigate to the validation page
+        goToValidation(problem.id);
+    }
 
-        // Show loading state
-        const parentElement = clickedButton.closest('.suggestion-item, .list-group-item');
+    function saveAIProblem(suggestion, interest) {
+        const problemData = {
+            domain: suggestion.domain || 'AI Generated',
+            problem_description: suggestion.problem_description || suggestion.description || suggestion.title || '',
+            interest_level: interest,
+            reason: 'Auto-generated by AI',
+            tag: suggestion.tag || 'AI-Generated',
+            ai_generated: 1
+        };
+        saveProblemToServer(problemData);
+    }
 
-        // If it's already in the list of saved problems
-        const isSavedProblem = parentElement && parentElement.classList.contains('list-group-item');
+    function goToValidation(problemId) {
+        window.location.href = `/validation.html?problem=${problemId}`;
+    }
 
-        // Create a loading indicator
-        const loadingIndicator = document.createElement('div');
-        loadingIndicator.className = 'spinner-border spinner-border-sm text-primary ms-2';
-        loadingIndicator.setAttribute('role', 'status');
-        clickedButton.appendChild(loadingIndicator);
-        clickedButton.disabled = true;
-
-        // Prepare request data
-        let problemDescription;
-        let tag;
-
-        if (isSavedProblem && parentElement) {
-            const descriptionElement = parentElement.querySelector('.problem-description');
-            const tagElement = parentElement.querySelector('.problem-tag');
-
-            problemDescription = descriptionElement ? descriptionElement.textContent : '';
-            tag = tagElement ? tagElement.textContent : 'General';
-        } else {
-            // For suggestion items - add more detailed debugging and better fallbacks
-            console.log('Original problem object:', originalProblem);
-            problemDescription = originalProblem.problem_description || originalProblem.description || originalProblem.title || '';
-            tag = originalProblem.tag || 'General';
-
-            // Make sure we have valid data before continuing
-            if (!problemDescription) {
-                console.error('No problem description found in:', originalProblem);
-                alert('Could not find problem description. Please try another problem.');
-                loadingIndicator.remove();
-                clickedButton.disabled = false;
-                return;
-            }
+    // Problem List Management
+    function loadProblems() {
+        if (!loadingIndicator || !noProblemsMessage || !problemList) {
+            console.error('Required DOM elements for problem list missing');
+            return;
         }
 
-        const requestData = {
-            originalProblem: problemDescription,
-            tag: tag
-        };
+        // Show loading indicator
+        loadingIndicator.classList.remove('d-none');
+        noProblemsMessage.classList.add('d-none');
 
-        console.log('Sending similar problem request:', requestData);
+        // Clear existing problems
+        const items = problemList.querySelectorAll('.list-group-item:not(#loadingIndicator):not(#noProblemsMessage)');
+        items.forEach(item => item.remove());
 
-        // Call the API to get similar problems
-        fetch('/api/similar-problems', {
-            method: 'POST',
+        // Fetch problems from server
+        fetch('/api/problems', {
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': 'MY_SECRET_TOKEN'
             },
-            credentials: 'same-origin',
-            body: JSON.stringify(requestData)
+            credentials: 'same-origin'
         })
         .then(response => {
             if (!response.ok) {
@@ -745,351 +848,455 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            // Remove loading indicator
-            loadingIndicator.remove();
-            clickedButton.disabled = false;
+            // Hide loading indicator
+            loadingIndicator.classList.add('d-none');
 
-            console.log('Received similar problems response:', data);
+            // Check if data is an array directly or has a problems property
+            const problems = Array.isArray(data) ? data : (data.problems || []);
 
-            // Check the data format
-            const problems = Array.isArray(data) ? data : 
-                            (data.problems && Array.isArray(data.problems) ? data.problems : []);
-
-            // If we're in the suggestions section, just append the new suggestions
-            if (!isSavedProblem) {
-                displaySuggestions(problems);
+            if (problems.length === 0) {
+                // Show no problems message
+                noProblemsMessage.classList.remove('d-none');
             } else {
-                // For saved problems, show a new suggestions section
-                showSimilarProblemsSection(problems);
+                // Sort problems by interest level
+                problems.sort((a, b) => {
+                    const interestOrder = {
+                        'Very Interested': 0,
+                        'Somewhat Interested': 1,
+                        'Not Interested': 2
+                    };
+                    return interestOrder[a.interest_level] - interestOrder[b.interest_level];
+                });
+
+                // Create problem items
+                problems.forEach(problem => {
+                    addProblemToList(problem);
+                });
             }
         })
         .catch(error => {
-            // Remove loading indicator
-            loadingIndicator.remove();
-            clickedButton.disabled = false;
+            // Hide loading indicator
+            loadingIndicator.classList.add('d-none');
 
-            console.error('Error generating similar problems:', error);
-            alert('Error generating similar problems: ' + error.message);
+            // Show error
+            const errorElement = document.createElement('div');
+            errorElement.className = 'alert alert-danger';
+            errorElement.textContent = 'Error loading problems: ' + error.message;
+            problemList.appendChild(errorElement);
+
+            console.error('Error details:', error);
         });
     }
 
-    function showSimilarProblemsSection(similarProblems) {
-        // Check if there's already a similar problems section
-        let similarSection = document.getElementById('similarProblemsSection');
+function addProblemToList(problem) {
+    if (!problemList) {
+        console.error('Problem list element missing');
+        return;
+    }
 
-        if (!similarSection) {
-            // Create a new section for similar problems
-            similarSection = document.createElement('div');
-            similarSection.id = 'similarProblemsSection';
-            similarSection.className = 'card mt-4';
+    // Clone template
+    const template = document.getElementById('problemItemTemplate');
+    if (!template) {
+        console.error('Problem item template not found');
+        return;
+    }
 
-            // Insert after the problem list
-            problemListSection.parentNode.insertBefore(similarSection, problemListSection.nextSibling);
+    const clone = document.importNode(template.content, true);
+
+    // Set problem data - with checks
+    const descEl = clone.querySelector('.problem-description');
+    if (descEl) descEl.textContent = problem.problem_description;
+
+    const domainEl = clone.querySelector('.problem-domain');
+    if (domainEl) domainEl.textContent = problem.domain;
+
+    const interestBadge = clone.querySelector('.problem-interest');
+    if (interestBadge) {
+        interestBadge.textContent = problem.interest_level;
+
+        // Set appropriate badge color based on interest level
+        if (problem.interest_level === 'Not Interested') {
+            interestBadge.classList.remove('bg-success');
+            interestBadge.classList.add('bg-secondary');
+        } else if (problem.interest_level === 'Somewhat Interested') {
+            interestBadge.classList.remove('bg-success');
+            interestBadge.classList.add('bg-info');
         }
+    }
 
-        // Update the content
-        similarSection.innerHTML = `
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Similar Problem Suggestions</h5>
-            </div>
-            <div class="card-body">
-                <p class="mb-3">Here are similar problems you might be interested in:</p>
-                <div id="similarProblemsList" class="list-group mb-3"></div>
-                <button id="closeSimilarBtn" class="btn btn-outline-secondary">Close</button>
-            </div>
-        `;
+    // Set tag if available
+    const tagBadge = clone.querySelector('.problem-tag');
+    if (tagBadge) {
+        if (problem.tag) {
+            tagBadge.textContent = problem.tag;
+        } else {
+            tagBadge.classList.add('d-none');
+        }
+    }
 
-        // Add the similar problems
-        const similarProblemsList = document.getElementById('similarProblemsList');
+    // Add event listeners for buttons
+    const viewBtn = clone.querySelector('.view-problem-btn');
+    const deleteBtn = clone.querySelector('.delete-problem-btn');
+    const validateBtn = clone.querySelector('.validate-problem-btn');
+    const similarBtn = clone.querySelector('.similar-problems-btn');
 
-        // Check if we got any problems
-        if (similarProblems && similarProblems.length > 0) {
-            // Display suggestions in the similar problems section
-            similarProblems.forEach(suggestion => {
-                const template = document.getElementById('suggestionItemTemplate');
-                const clone = document.importNode(template.content, true);
+    if (viewBtn) viewBtn.addEventListener('click', () => viewProblem(problem, clone));
+    if (deleteBtn) deleteBtn.addEventListener('click', () => deleteProblem(problem.id));
 
-                // Set suggestion data
-                clone.querySelector('.suggestion-title').textContent = suggestion.problem_description || suggestion.title || '';
-                clone.querySelector('.suggestion-description').textContent = suggestion.domain || '';
+    // Show "Solve This" button only for "Very Interested" problems
+    if (validateBtn) {
+        if (problem.interest_level === 'Very Interested') {
+            validateBtn.classList.remove('d-none');
+            validateBtn.addEventListener('click', () => goToValidation(problem.id));
+        } else {
+            validateBtn.classList.add('d-none');
+        }
+    }
 
-                // Set tag
-                const tagElement = clone.querySelector('.suggestion-tag');
-                tagElement.textContent = suggestion.tag || 'AI-Generated';
-
-                // Add event listeners for rating buttons
-                const notInterestedBtn = clone.querySelector('.not-interested-btn');
-                const somewhatInterestedBtn = clone.querySelector('.somewhat-interested-btn');
-                const veryInterestedBtn = clone.querySelector('.very-interested-btn');
-
-                function saveAIProblem(suggestion, interest) {
-                    const problemData = {
-                        domain: suggestion.domain || 'AI Generated',
-                        problem_description: suggestion.problem_description || suggestion.description || suggestion.title || '',
-                        interest_level: interest,
-                        reason: 'Auto-generated by AI',
-                        tag: suggestion.tag || 'AI-Generated',
-                        ai_generated: 1
-                    };
-                    saveProblemToServer(problemData);
-                }
-
-                notInterestedBtn.addEventListener('click', function() {
-                    if (confirm('Are you sure you\'re not interested in this problem? It will be removed.')) {
-                        this.closest('.suggestion-item').remove();
-                    }
-                });
-
-                somewhatInterestedBtn.addEventListener('click', function() {
-                    saveAIProblem(suggestion, 'Somewhat Interested');
-                    this.closest('.suggestion-item').remove();
-                });
-
-                veryInterestedBtn.addEventListener('click', function() {
-                    saveAIProblem(suggestion, 'Very Interested');
-                    this.closest('.suggestion-item').remove();
-                });
-
-                similarProblemsList.appendChild(clone);
+    // CHANGE: Show "Generate Similar" button for both "Somewhat Interested" and "Very Interested" problems
+    if (similarBtn) {
+        if (problem.interest_level === 'Very Interested' || problem.interest_level === 'Somewhat Interested') {
+            similarBtn.classList.remove('d-none');
+            similarBtn.addEventListener('click', function(event) {
+                generateSimilarProblems(problem, event);
             });
         } else {
-            // Display a message if no problems were found
-            similarProblemsList.innerHTML = '<div class="alert alert-warning">No similar problems found. Try with a different problem.</div>';
+            // Hide the Generate Similar button for "Not Interested" problems
+            similarBtn.classList.add('d-none');
+        }
+    }
+
+    // Add to the list
+    problemList.appendChild(clone);
+}
+
+function viewProblem(problem, element) {
+    if (!element) {
+        console.error('Element is missing for problem view');
+        return;
+    }
+
+    // Toggle edit section
+    const editSection = element.querySelector('.problem-edit-section');
+    const editDescriptionInput = element.querySelector('.problem-edit-description');
+
+    if (!editSection || !editDescriptionInput) {
+        console.error('Edit section elements missing');
+        return;
+    }
+
+    if (editSection.classList.contains('d-none')) {
+        // Show edit section and fill with current description
+        editSection.classList.remove('d-none');
+        editDescriptionInput.value = problem.problem_description;
+
+        // Add event listeners for edit buttons
+        const cancelBtn = element.querySelector('.cancel-edit-btn');
+        const saveBtn = element.querySelector('.save-edit-btn');
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                editSection.classList.add('d-none');
+            });
         }
 
-        // Add event listener to close button
-        document.getElementById('closeSimilarBtn').addEventListener('click', function() {
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                updateProblemDescription(problem.id, editDescriptionInput.value);
+            });
+        }
+    } else {
+        // Hide edit section
+        editSection.classList.add('d-none');
+    }
+}
+
+function updateProblemDescription(id, newDescription) {
+    if (!newDescription || !newDescription.trim()) {
+        alert('Problem description cannot be empty');
+        return;
+    }
+
+    fetch(`/api/problems/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': 'MY_SECRET_TOKEN'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ problem_description: newDescription })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Reload problems to reflect changes
+        loadProblems();
+    })
+    .catch(error => {
+        console.error('Error updating problem:', error);
+        alert('Error updating problem: ' + error.message);
+    });
+}
+
+function deleteProblem(id) {
+    if (!id) {
+        console.error('Problem ID is missing for delete operation');
+        return;
+    }
+
+    if (confirm('Are you sure you want to delete this problem?')) {
+        fetch(`/api/problems/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': 'MY_SECRET_TOKEN'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // If it was an AI-generated problem, update the counter
+            fetchRemainingAIProblems();
+
+            // Reload problems
+            loadProblems();
+        })
+        .catch(error => {
+            console.error('Error deleting problem:', error);
+            alert('Error deleting problem: ' + error.message);
+        });
+    }
+}
+
+function generateSimilarProblems(originalProblem, event) {
+    if (!originalProblem) {
+        console.error('Original problem is missing for generating similar problems');
+        return;
+    }
+
+    // Check if we have any AI problems left
+    if (remainingAIProblems < 2) {
+        alert('You need at least 2 remaining AI problem slots to generate similar problems.');
+        return;
+    }
+
+    // Get the event target (the button that was clicked)
+    const clickedButton = event ? event.target : this;
+    if (!clickedButton) {
+        console.error('Button element missing for similar problems');
+        return;
+    }
+
+    // Show loading state
+    const parentElement = clickedButton.closest('.suggestion-item, .list-group-item');
+
+    // If it's already in the list of saved problems
+    const isSavedProblem = parentElement && parentElement.classList.contains('list-group-item');
+
+    // Create a loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'spinner-border spinner-border-sm text-primary ms-2';
+    loadingIndicator.setAttribute('role', 'status');
+    clickedButton.appendChild(loadingIndicator);
+    clickedButton.disabled = true;
+
+    // Prepare request data
+    let problemDescription;
+    let tag;
+
+    if (isSavedProblem && parentElement) {
+        const descriptionElement = parentElement.querySelector('.problem-description');
+        const tagElement = parentElement.querySelector('.problem-tag');
+
+        problemDescription = descriptionElement ? descriptionElement.textContent : '';
+        tag = tagElement ? tagElement.textContent : 'General';
+    } else {
+        // For suggestion items - add more detailed debugging and better fallbacks
+        console.log('Original problem object:', originalProblem);
+        problemDescription = originalProblem.problem_description || originalProblem.description || originalProblem.title || '';
+        tag = originalProblem.tag || 'General';
+
+        // Make sure we have valid data before continuing
+        if (!problemDescription) {
+            console.error('No problem description found in:', originalProblem);
+            alert('Could not find problem description. Please try another problem.');
+            loadingIndicator.remove();
+            clickedButton.disabled = false;
+            return;
+        }
+    }
+
+    const requestData = {
+        originalProblem: problemDescription,
+        tag: tag
+    };
+
+    console.log('Sending similar problem request:', requestData);
+
+    // Call the API to get similar problems
+    fetch('/api/similar-problems', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': 'MY_SECRET_TOKEN'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Remove loading indicator
+        loadingIndicator.remove();
+        clickedButton.disabled = false;
+
+        console.log('Received similar problems response:', data);
+
+        // Check the data format
+        const problems = Array.isArray(data) ? data : 
+                        (data.problems && Array.isArray(data.problems) ? data.problems : []);
+
+        // If we're in the suggestions section, just append the new suggestions
+        if (!isSavedProblem) {
+            displaySuggestions(problems);
+        } else {
+            // For saved problems, show a new suggestions section
+            showSimilarProblemsSection(problems);
+        }
+    })
+    .catch(error => {
+        // Remove loading indicator
+        loadingIndicator.remove();
+        clickedButton.disabled = false;
+
+        console.error('Error generating similar problems:', error);
+        alert('Error generating similar problems: ' + error.message);
+    });
+}
+
+function showSimilarProblemsSection(similarProblems) {
+    if (!problemListSection) {
+        console.error('Problem list section missing for similar problems display');
+        return;
+    }
+
+    // Check if there's already a similar problems section
+    let similarSection = document.getElementById('similarProblemsSection');
+
+    if (!similarSection) {
+        // Create a new section for similar problems
+        similarSection = document.createElement('div');
+        similarSection.id = 'similarProblemsSection';
+        similarSection.className = 'card mt-4';
+
+        // Insert after the problem list
+        problemListSection.parentNode.insertBefore(similarSection, problemListSection.nextSibling);
+    }
+
+    // Update the content
+    similarSection.innerHTML = `
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Similar Problem Suggestions</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">Here are similar problems you might be interested in:</p>
+            <div id="similarProblemsList" class="list-group mb-3"></div>
+            <button id="closeSimilarBtn" class="btn btn-outline-secondary">Close</button>
+        </div>
+    `;
+
+    // Add the similar problems
+    const similarProblemsList = document.getElementById('similarProblemsList');
+    if (!similarProblemsList) {
+        console.error('Similar problems list element not found');
+        return;
+    }
+
+    // Check if we got any problems
+    if (similarProblems && similarProblems.length > 0) {
+        // Display suggestions in the similar problems section
+        similarProblems.forEach(suggestion => {
+            const template = document.getElementById('suggestionItemTemplate');
+            if (!template) {
+                console.error('Suggestion item template not found');
+                return;
+            }
+
+            const clone = document.importNode(template.content, true);
+
+            // Set suggestion data with null checks
+            const titleEl = clone.querySelector('.suggestion-title');
+            if (titleEl) {
+                titleEl.textContent = suggestion.problem_description || suggestion.title || '';
+            }
+
+            const descEl = clone.querySelector('.suggestion-description');
+            if (descEl) {
+                descEl.textContent = suggestion.domain || '';
+            }
+
+            // Set tag
+            const tagElement = clone.querySelector('.suggestion-tag');
+            if (tagElement) {
+                tagElement.textContent = suggestion.tag || 'AI-Generated';
+            }
+
+            // Add event listeners for rating buttons with null checks
+            const notInterestedBtn = clone.querySelector('.not-interested-btn');
+            const somewhatInterestedBtn = clone.querySelector('.somewhat-interested-btn');
+            const veryInterestedBtn = clone.querySelector('.very-interested-btn');
+
+            if (notInterestedBtn) {
+                notInterestedBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you\'re not interested in this problem? It will be removed.')) {
+                        const item = this.closest('.suggestion-item');
+                        if (item) item.remove();
+                    }
+                });
+            }
+
+            if (somewhatInterestedBtn) {
+                somewhatInterestedBtn.addEventListener('click', function() {
+                    saveAIProblem(suggestion, 'Somewhat Interested');
+                    const item = this.closest('.suggestion-item');
+                    if (item) item.remove();
+                });
+            }
+
+            if (veryInterestedBtn) {
+                veryInterestedBtn.addEventListener('click', function() {
+                    saveAIProblem(suggestion, 'Very Interested');
+                    const item = this.closest('.suggestion-item');
+                    if (item) item.remove();
+                });
+            }
+
+            similarProblemsList.appendChild(clone);
+        });
+    } else {
+        // Display a message if no problems were found
+        similarProblemsList.innerHTML = '<div class="alert alert-warning">No similar problems found. Try with a different problem.</div>';
+    }
+
+    // Add event listener to close button
+    const closeBtn = document.getElementById('closeSimilarBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
             similarSection.remove();
         });
     }
-
-        function validateProblem(problem) {
-            // If it's a suggestion, save it first with 'Very Interested' status
-            if (!problem.id) {
-                saveAIProblem(problem, 'Very Interested');
-                // After saving, we'll need to navigate to the validation page
-                // This will be handled in the next steps
-                return;
-            }
-
-            // For existing problems, just navigate to the validation page
-            goToValidation(problem.id);
-        }
-
-        function goToValidation(problemId) {
-            window.location.href = `/validation.html?problem=${problemId}`;
-        }
-
-        // Problem List Management
-        function loadProblems() {
-            // Show loading indicator
-            loadingIndicator.classList.remove('d-none');
-            noProblemsMessage.classList.add('d-none');
-
-            // Clear existing problems
-            const items = problemList.querySelectorAll('.list-group-item:not(#loadingIndicator):not(#noProblemsMessage)');
-            items.forEach(item => item.remove());
-
-            // Fetch problems from server
-            fetch('/api/problems', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': 'MY_SECRET_TOKEN'
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Hide loading indicator
-                loadingIndicator.classList.add('d-none');
-
-                // Check if data is an array directly or has a problems property
-                const problems = Array.isArray(data) ? data : (data.problems || []);
-
-                if (problems.length === 0) {
-                    // Show no problems message
-                    noProblemsMessage.classList.remove('d-none');
-                } else {
-                    // Sort problems by interest level
-                    problems.sort((a, b) => {
-                        const interestOrder = {
-                            'Very Interested': 0,
-                            'Somewhat Interested': 1,
-                            'Not Interested': 2
-                        };
-                        return interestOrder[a.interest_level] - interestOrder[b.interest_level];
-                    });
-
-                    // Create problem items
-                    problems.forEach(problem => {
-                        addProblemToList(problem);
-                    });
-                }
-            })
-            .catch(error => {
-                // Hide loading indicator
-                loadingIndicator.classList.add('d-none');
-
-                // Show error
-                const errorElement = document.createElement('div');
-                errorElement.className = 'alert alert-danger';
-                errorElement.textContent = 'Error loading problems: ' + error.message;
-                problemList.appendChild(errorElement);
-
-                console.error('Error details:', error);
-            });
-        }
-
-        function addProblemToList(problem) {
-            // Clone template
-            const template = document.getElementById('problemItemTemplate');
-            const clone = document.importNode(template.content, true);
-
-            // Set problem data
-            clone.querySelector('.problem-description').textContent = problem.problem_description;
-            clone.querySelector('.problem-domain').textContent = problem.domain;
-
-            const interestBadge = clone.querySelector('.problem-interest');
-            interestBadge.textContent = problem.interest_level;
-
-            // Set appropriate badge color based on interest level
-            if (problem.interest_level === 'Not Interested') {
-                interestBadge.classList.remove('bg-success');
-                interestBadge.classList.add('bg-secondary');
-            } else if (problem.interest_level === 'Somewhat Interested') {
-                interestBadge.classList.remove('bg-success');
-                interestBadge.classList.add('bg-info');
-            }
-
-            // Set tag if available
-            const tagBadge = clone.querySelector('.problem-tag');
-            if (problem.tag) {
-                tagBadge.textContent = problem.tag;
-            } else {
-                tagBadge.classList.add('d-none');
-            }
-
-            // Add event listeners for buttons
-            const viewBtn = clone.querySelector('.view-problem-btn');
-            const deleteBtn = clone.querySelector('.delete-problem-btn');
-            const validateBtn = clone.querySelector('.validate-problem-btn');
-            const similarBtn = clone.querySelector('.similar-problems-btn');
-
-            viewBtn.addEventListener('click', () => viewProblem(problem, clone));
-            deleteBtn.addEventListener('click', () => deleteProblem(problem.id));
-
-            // Show "Solve This" button only for "Very Interested" problems
-            if (problem.interest_level === 'Very Interested') {
-                validateBtn.classList.remove('d-none');
-                validateBtn.addEventListener('click', () => goToValidation(problem.id));
-            }
-
-            // CHANGE: Show "Generate Similar" button for both "Somewhat Interested" and "Very Interested" problems
-            if (problem.interest_level === 'Very Interested' || problem.interest_level === 'Somewhat Interested') {
-                similarBtn.classList.remove('d-none');
-                similarBtn.addEventListener('click', function(event) {
-                    generateSimilarProblems(problem, event);
-                });
-            } else {
-                // Hide the Generate Similar button for "Not Interested" problems
-                similarBtn.classList.add('d-none');
-            }
-
-            // Add to the list
-            problemList.appendChild(clone);
-        }
-
-        function viewProblem(problem, element) {
-            // Toggle edit section
-            const editSection = element.querySelector('.problem-edit-section');
-            const editDescriptionInput = element.querySelector('.problem-edit-description');
-
-            if (editSection.classList.contains('d-none')) {
-                // Show edit section and fill with current description
-                editSection.classList.remove('d-none');
-                editDescriptionInput.value = problem.problem_description;
-
-                // Add event listeners for edit buttons
-                const cancelBtn = element.querySelector('.cancel-edit-btn');
-                const saveBtn = element.querySelector('.save-edit-btn');
-
-                cancelBtn.addEventListener('click', function() {
-                    editSection.classList.add('d-none');
-                });
-
-                saveBtn.addEventListener('click', function() {
-                    updateProblemDescription(problem.id, editDescriptionInput.value);
-                });
-            } else {
-                // Hide edit section
-                editSection.classList.add('d-none');
-            }
-        }
-
-        function updateProblemDescription(id, newDescription) {
-            if (!newDescription.trim()) {
-                alert('Problem description cannot be empty');
-                return;
-            }
-
-            fetch(`/api/problems/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': 'MY_SECRET_TOKEN'
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({ problem_description: newDescription })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Reload problems to reflect changes
-                loadProblems();
-            })
-            .catch(error => {
-                console.error('Error updating problem:', error);
-                alert('Error updating problem: ' + error.message);
-            });
-        }
-
-        function deleteProblem(id) {
-            if (confirm('Are you sure you want to delete this problem?')) {
-                fetch(`/api/problems/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': 'MY_SECRET_TOKEN'
-                    },
-                    credentials: 'same-origin'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // If it was an AI-generated problem, update the counter
-                    fetchRemainingAIProblems();
-
-                    // Reload problems
-                    loadProblems();
-                })
-                .catch(error => {
-                    console.error('Error deleting problem:', error);
-                    alert('Error deleting problem: ' + error.message);
-                });
-            }
-        }
-    });
+}
+});
